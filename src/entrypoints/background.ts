@@ -1,17 +1,47 @@
 import { browser, defineBackground } from '#imports';
-import { enabledSetting } from '@/core/settings';
+import { injectIntoOpenTabs, syncContentScripts } from '@/background/content-registration';
+import { onMessages } from '@/core/messaging';
+import { removeLegacyKeys, setSiteEnabled, updateSettings, withoutSites } from '@/core/settings';
+import { originsForSite, siteKeyFromOrigin, type SiteKey } from '@/core/site';
 
 /**
- * Background service worker.
- *
- * Chrome stops this worker when idle and restarts it on demand, so it must
- * never keep important state in variables: everything lives in storage.
- * In Milestone 0 it only sets up defaults on first install.
+ * Background service worker. Chrome stops it when idle and restarts it on
+ * demand: all listeners are registered synchronously at the top level, and
+ * all state lives in storage or in the browser's permission list.
  */
 export default defineBackground(() => {
-  browser.runtime.onInstalled.addListener(async ({ reason }) => {
-    if (reason === 'install') {
-      await enabledSetting.setValue(false);
-    }
+  browser.runtime.onInstalled.addListener(async () => {
+    await removeLegacyKeys();
+    await syncContentScripts();
+  });
+
+  browser.runtime.onStartup.addListener(() => {
+    void syncContentScripts();
+  });
+
+  // The user allowed one or more sites (from the popup's "Allow" button).
+  browser.permissions.onAdded.addListener(async ({ origins = [] }) => {
+    const sites = new Set(origins.map(siteKeyFromOrigin).filter((s): s is SiteKey => s !== null));
+    for (const site of sites) await setSiteEnabled(site, true);
+    await syncContentScripts();
+    await injectIntoOpenTabs(origins);
+  });
+
+  // Access removed (Reset site, or the user revoked it in Chrome's settings).
+  browser.permissions.onRemoved.addListener(async ({ origins = [] }) => {
+    const sites = new Set(origins.map(siteKeyFromOrigin).filter((s): s is SiteKey => s !== null));
+    await updateSettings((settings) => {
+      settings.sites = withoutSites(settings.sites, sites);
+    });
+    await syncContentScripts();
+  });
+
+  onMessages({
+    // Backup path if the popup stayed open after Chrome's prompt.
+    'toonify/site-allowed': async ({ site }) => {
+      await setSiteEnabled(site, true);
+      await syncContentScripts();
+      return { injectedTabs: await injectIntoOpenTabs(originsForSite(site)) };
+    },
   });
 });

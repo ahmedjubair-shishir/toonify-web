@@ -1,75 +1,169 @@
-import { useEffect, useState } from 'react';
-import { browser } from '#imports';
-import { getPageSupport, type PageSupport } from '@/core/restricted-pages';
-import { enabledSetting } from '@/core/settings';
-import { Switch } from './components/Switch';
+import { Check, Lock, Pause, Power, RotateCcw, RotateCw, TriangleAlert, Ban } from 'lucide-react';
+import { useState } from 'react';
+import { Lockup } from './components/BrandMark';
+import { Button } from './components/Button';
+import { ConfirmDialog } from './components/ConfirmDialog';
+import { EmptyState } from './components/EmptyState';
+import { PowerButton } from './components/PowerButton';
+import { SiteRow } from './components/SiteRow';
+import { SiteToggle } from './components/SiteToggle';
+import { Toast } from './components/Toast';
+import { usePopupState } from './usePopupState';
+
+function pageLabel(url: string | undefined): string {
+  if (!url) return 'This page';
+  try {
+    const { protocol, host } = new URL(url);
+    if (!host) return 'This page'; // about:blank, data: and similar
+    return protocol.startsWith('http') ? host.replace(/^www\./, '') : `${protocol}//${host}`;
+  } catch {
+    return 'This page';
+  }
+}
 
 export function App() {
-  // null = still loading from storage (avoids flashing the wrong state)
-  const [enabled, setEnabled] = useState<boolean | null>(null);
-  // null = still checking the active tab
-  const [pageSupport, setPageSupport] = useState<PageSupport | null>(null);
-
-  useEffect(() => {
-    void enabledSetting.getValue().then(setEnabled);
-    const unwatch = enabledSetting.watch(setEnabled);
-
-    void browser.tabs
-      .query({ active: true, currentWindow: true })
-      .then(([tab]) => setPageSupport(getPageSupport(tab?.url)));
-
-    return unwatch;
-  }, []);
-
-  // Chrome only reveals a tab's URL for sites we have access to (all http/https
-  // pages in Milestone 0). So "unknown" means a non-web page (chrome://, file://,
-  // the new tab page...) and Toonify can't run there either.
-  // Milestone 1 note: with optional host permissions, "unknown" can also mean
-  // "regular site, not allowed yet". That state gets its own "Allow" UI.
-  const restricted = pageSupport !== null && pageSupport !== 'supported';
+  const { view, site, tab, settings, hasAccess, actions } = usePopupState();
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const label = site ?? pageLabel(tab?.url);
+  const globalOn = settings.globalEnabled;
 
   return (
-    <main className="popup">
+    <main className="popup" aria-busy={view.kind === 'loading'}>
       <header className="popup__header">
-        <span className="brand" aria-hidden="true">
-          <span className="brand__mark" />
-          <span className="brand__name">
-            Toonify <span className="brand__accent">Web</span>
-          </span>
-        </span>
-        <span id="global-switch-label" className="label">
-          {enabled ? 'On' : 'Off'}
-          <span className="visually-hidden"> - Toonify for all sites</span>
-        </span>
-        <Switch
-          checked={enabled ?? false}
-          disabled={enabled === null}
-          labelledBy="global-switch-label"
-          onChange={(value) => void enabledSetting.setValue(value)}
+        <Lockup />
+        <PowerButton
+          on={globalOn}
+          disabled={view.kind === 'loading'}
+          onChange={actions.setGlobalEnabled}
         />
       </header>
 
-      <section className="popup__body" aria-live="polite">
-        {restricted ? (
-          <div className="alert alert--error" role="note">
-            <p className="alert__title">Can&apos;t run on this page</p>
-            <p className="alert__body">
-              Browsers block extensions on settings pages and web stores. Open a regular website to
-              use Toonify.
-            </p>
-          </div>
-        ) : (
-          <p className="status">
-            {enabled
-              ? 'Toonify is on. Open pages update instantly.'
-              : 'Toonify is off. Pages show their original look.'}
-          </p>
+      <section className="popup__body">
+        {view.kind === 'loading' && <div className="skeleton" aria-label="Loading" />}
+
+        {view.kind === 'restricted' && (
+          <>
+            <SiteRow label={label} tone="unsupported" />
+            <div className="alert alert--error" role="note">
+              <Ban size={18} strokeWidth={1.8} className="alert__icon" aria-hidden="true" />
+              <div>
+                <p className="alert__title">Can&apos;t run on this page</p>
+                <p className="alert__body">
+                  Browsers block extensions on settings pages and web stores. Open a regular website
+                  to use Toonify.
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {view.kind === 'paused' && (
+          <EmptyState
+            icon={Pause}
+            title="Toonify is paused"
+            action={
+              <Button variant="primary" icon={Power} onClick={() => actions.setGlobalEnabled(true)}>
+                Resume Toonify
+              </Button>
+            }
+          >
+            Every site shows its original look. Your site choices are saved.
+          </EmptyState>
+        )}
+
+        {view.kind === 'needs-access' && site && (
+          <>
+            <SiteRow label={site} faviconUrl={tab?.favIconUrl} tone="needs-access" />
+            <EmptyState
+              icon={Lock}
+              tone="accent"
+              title="Allow Toonify on this site?"
+              action={
+                <Button
+                  variant="primary"
+                  icon={Check}
+                  onClick={() =>
+                    actions.allowSite().catch((error: unknown) => {
+                      // Keep Chrome's exact reason for debugging (popup > Inspect > Console).
+                      console.error('Toonify: access request failed', error);
+                      setToast("Chrome didn't allow access. Please try again.");
+                    })
+                  }
+                >
+                  Allow on {site}
+                </Button>
+              }
+            >
+              Toonify needs your OK to change how {site} looks. It won&apos;t read or send anything
+              from the page.
+            </EmptyState>
+          </>
+        )}
+
+        {view.kind === 'site-off' && site && (
+          <>
+            <SiteRow label={site} faviconUrl={tab?.favIconUrl} tone="off" />
+            <SiteToggle site={site} checked={false} onChange={actions.setSiteEnabled} />
+          </>
+        )}
+
+        {view.kind === 'active' && site && (
+          <>
+            <SiteRow label={site} faviconUrl={tab?.favIconUrl} tone="active" />
+            <SiteToggle site={site} checked onChange={actions.setSiteEnabled} />
+            {view.applied === false && (
+              <div className="alert alert--warning" role="note">
+                <TriangleAlert
+                  size={18}
+                  strokeWidth={1.8}
+                  className="alert__icon"
+                  aria-hidden="true"
+                />
+                <div>
+                  <p className="alert__title">Reload to apply</p>
+                  <p className="alert__body">This tab was open before Toonify was allowed here.</p>
+                  <Button
+                    variant="secondary"
+                    icon={RotateCw}
+                    className="alert__action"
+                    onClick={actions.reloadTab}
+                  >
+                    Reload page
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
 
       <footer className="popup__footer">
-        <span className="caption">Milestone 0 · technical spike</span>
+        {hasAccess && site && view.kind !== 'paused' && (
+          <Button variant="ghost" icon={RotateCcw} onClick={() => setConfirmReset(true)}>
+            Reset site
+          </Button>
+        )}
+        <span className="caption">v0.1 preview</span>
       </footer>
+
+      <Toast message={toast} onDismiss={() => setToast(null)} />
+
+      <ConfirmDialog
+        open={confirmReset}
+        icon={RotateCcw}
+        title="Reset this site?"
+        confirmLabel="Reset site"
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={() => {
+          setConfirmReset(false);
+          void actions
+            .resetSite()
+            .then(() => setToast(`${site ?? 'Site'} restored to its original look`));
+        }}
+      >
+        This removes Toonify&apos;s styling and access for {site}. You can allow it again any time.
+      </ConfirmDialog>
     </main>
   );
 }

@@ -14,11 +14,16 @@ Senior browser-extension engineer and mentor. The owner is a UX designer rebuild
 - Check current official docs for browser APIs and store policies. Distinguish confirmed behaviour from assumptions.
 - Never claim a test passed unless it actually ran. Report exactly what ran and what did not.
 
-## Stack (Milestone 0 decisions)
+## Stack and architecture decisions
 
 - WXT 0.21.x (Vite-based, cross-browser, MV3), React 19, TypeScript **5.9** (typescript-eslint does not support TS 7 yet; revisit later).
 - Vitest + happy-dom + WXT fake browser for unit tests; Playwright with the built extension for e2e.
 - `srcDir: 'src'`; imports from `#imports` (WXT virtual module) and `@/` (src alias).
+- Access is per site via `optional_host_permissions` (owner decision, M1). Never add `host_permissions` or manifest `content_scripts` to the store build.
+- Content script uses `registration: 'runtime'` with no `matches`; the background registers it for allowed sites.
+- Settings: one validated object (`src/core/settings.ts`); always read through `getSettings()` / `parseSettings()`.
+- Popup/UI colours come only from `src/core/tokens/tokens.css` (generated from Figma).
+- e2e tests use `wxt build --mode e2e` (`.output/chrome-mv3-e2e`), which pre-grants localhost test sites and `tabs`. Test-only; never ship it.
 
 ## Code rules
 

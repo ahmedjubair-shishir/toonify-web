@@ -1,6 +1,6 @@
 {
   "name": "toonify-web",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Make the web feel illustrated: a reversible, cartoon-inspired visual layer for websites.",
   "type": "module",
@@ -20,17 +20,20 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "wxt build && playwright test",
+    "test:e2e": "wxt build --mode e2e && playwright test",
     "check": "npm run compile && npm run lint && npm run format:check && npm run test",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "lucide-react": "^1.74.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
     "@playwright/test": "^1.65.1",
+    "@types/chrome": "^0.3.7",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@wxt-dev/module-react": "^1.2.2",

@@ -1,20 +1,35 @@
 import { defineContentScript } from '#imports';
-import { applyLayer, createLayerGuard, removeLayer } from '@/content/toonify-layer';
-import { enabledSetting } from '@/core/settings';
+import { applyLayer, createLayerGuard, isLayerApplied, removeLayer } from '@/content/toonify-layer';
+import { onMessages } from '@/core/messaging';
+import { getSettings, isSiteActive, watchSettings } from '@/core/settings';
+import { siteKeyFromUrl } from '@/core/site';
+
+declare global {
+  interface Window {
+    __toonifyContentLoaded?: boolean;
+  }
+}
 
 export default defineContentScript({
-  // Milestone 0: runs on all http(s) pages so we can test the add/remove cycle.
-  // Milestone 1 replaces this with optional host permissions + click-to-run
-  // (see docs/milestone-0.md, "Permissions").
-  matches: ['http://*/*', 'https://*/*'],
+  // Not in the manifest: the background registers this script only for sites
+  // the user has allowed (no `matches` here, so no install-time permissions).
+  registration: 'runtime',
   runAt: 'document_start',
 
   async main(ctx) {
-    let enabled = await enabledSetting.getValue();
-    const guard = createLayerGuard(document, () => enabled);
+    // The background may inject this script into a tab that already has it.
+    // This flag lives in the extension's isolated world, not the page's.
+    if (window.__toonifyContentLoaded) return;
+    window.__toonifyContentLoaded = true;
+
+    const site = siteKeyFromUrl(location.href);
+    if (site === null) return;
+
+    let active = isSiteActive(await getSettings(), site);
+    const guard = createLayerGuard(document, () => active);
 
     const sync = () => {
-      if (enabled) {
+      if (active) {
         applyLayer(document);
         guard.start();
       } else {
@@ -22,21 +37,27 @@ export default defineContentScript({
         removeLayer(document);
       }
     };
-
     sync();
 
-    // React to the popup switch in every open tab, without any messaging code.
-    const unwatch = enabledSetting.watch((value) => {
-      enabled = value;
+    // Popup switches (global or this site) update every tab on this site.
+    // Other sites' settings changing does not affect this page.
+    const unwatch = watchSettings((settings) => {
+      const next = isSiteActive(settings, site);
+      if (next === active) return;
+      active = next;
       sync();
     });
 
-    // When the extension is updated, reloaded or removed, this script is
-    // "invalidated". Clean up so the page is left exactly as we found it.
+    const stopMessages = onMessages({
+      'toonify/get-status': () => ({ site, applied: isLayerApplied(document) }),
+    });
+
     ctx.onInvalidated(() => {
       unwatch();
+      stopMessages();
       guard.stop();
       removeLayer(document);
+      window.__toonifyContentLoaded = false;
     });
   },
 });

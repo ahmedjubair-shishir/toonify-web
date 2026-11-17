@@ -1,0 +1,259 @@
+/*
+ * Toonify Web design tokens.
+ * GENERATED from the Figma variables (file "Toonify-Ext", Foundations page).
+ * Do not edit values by hand: change them in Figma, then regenerate.
+ *
+ * Usage: import once per extension page (popup, options). Never inject into
+ * websites. Theme: follows the OS unless <html data-theme="light|dark">.
+ * Accent variation: <html data-accent="mint|coral">.
+ */
+
+:root {
+  --tw-bg-canvas: #f6f6f9;
+  --tw-bg-surface: #ffffff;
+  --tw-bg-surface-raised: #ffffff;
+  --tw-bg-subtle: #eeeef3;
+  --tw-bg-hover: #eeeef3;
+  --tw-bg-pressed: #e2e2ea;
+  --tw-bg-disabled: #eeeef3;
+  --tw-bg-accent: #6236f5;
+  --tw-bg-accent-hover: #5127d6;
+  --tw-bg-accent-subtle: #f4f1ff;
+  --tw-bg-inverse: #18181f;
+  --tw-bg-highlight: #ffd147;
+  --tw-bg-success-subtle: #eafbf1;
+  --tw-bg-warning-subtle: #fff6e5;
+  --tw-bg-error-subtle: #ffeeee;
+  --tw-bg-error: #d22b2b;
+  --tw-bg-scrim: #1010167a;
+  --tw-text-primary: #18181f;
+  --tw-text-secondary: #5a5a6e;
+  --tw-text-disabled: #a0a0b0;
+  --tw-text-on-accent: #ffffff;
+  --tw-text-accent: #6236f5;
+  --tw-text-inverse: #ffffff;
+  --tw-text-success: #14804a;
+  --tw-text-warning: #b25e00;
+  --tw-text-error: #d22b2b;
+  --tw-text-on-highlight: #18181f;
+  --tw-icon-primary: #18181f;
+  --tw-icon-secondary: #5a5a6e;
+  --tw-icon-accent: #6236f5;
+  --tw-icon-on-accent: #ffffff;
+  --tw-icon-success: #14804a;
+  --tw-icon-warning: #b25e00;
+  --tw-icon-error: #d22b2b;
+  --tw-border-subtle: #eeeef3;
+  --tw-border-default: #e2e2ea;
+  --tw-border-strong: #74748a;
+  --tw-border-accent: #6236f5;
+  --tw-border-focus: #7552ff;
+  --tw-border-error: #d22b2b;
+  --tw-bg-accent-2: #0b7a6f;
+  --tw-bg-accent-2-hover: #0e8f80;
+  --tw-bg-accent-2-subtle: #e8faf7;
+  --tw-text-accent-2: #0b7a6f;
+  --tw-text-on-accent-2: #ffffff;
+  --tw-icon-accent-2: #0b7a6f;
+  --tw-border-accent-2: #0b7a6f;
+  --tw-bg-accent-3: #b01f50;
+  --tw-bg-accent-3-hover: #d62d63;
+  --tw-bg-accent-3-subtle: #fff0f3;
+  --tw-text-accent-3: #b01f50;
+  --tw-text-on-accent-3: #ffffff;
+  --tw-icon-accent-3: #b01f50;
+  --tw-border-accent-3: #b01f50;
+}
+
+/* Dark: follow the system unless the user forced light */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --tw-bg-canvas: #101016;
+    --tw-bg-surface: #18181f;
+    --tw-bg-surface-raised: #21212c;
+    --tw-bg-subtle: #2b2b38;
+    --tw-bg-hover: #2b2b38;
+    --tw-bg-pressed: #424254;
+    --tw-bg-disabled: #2b2b38;
+    --tw-bg-accent: #9479ff;
+    --tw-bg-accent-hover: #b8a6ff;
+    --tw-bg-accent-subtle: #1f0f57;
+    --tw-bg-inverse: #f6f6f9;
+    --tw-bg-highlight: #ffd147;
+    --tw-bg-success-subtle: #0e2a1c;
+    --tw-bg-warning-subtle: #2e2008;
+    --tw-bg-error-subtle: #330f12;
+    --tw-bg-error: #ff6b6b;
+    --tw-bg-scrim: #101016a3;
+    --tw-text-primary: #f6f6f9;
+    --tw-text-secondary: #a0a0b0;
+    --tw-text-disabled: #5a5a6e;
+    --tw-text-on-accent: #101016;
+    --tw-text-accent: #b8a6ff;
+    --tw-text-inverse: #18181f;
+    --tw-text-success: #34c77b;
+    --tw-text-warning: #ffb547;
+    --tw-text-error: #ff6b6b;
+    --tw-text-on-highlight: #18181f;
+    --tw-icon-primary: #f6f6f9;
+    --tw-icon-secondary: #a0a0b0;
+    --tw-icon-accent: #b8a6ff;
+    --tw-icon-on-accent: #101016;
+    --tw-icon-success: #34c77b;
+    --tw-icon-warning: #ffb547;
+    --tw-icon-error: #ff6b6b;
+    --tw-border-subtle: #2b2b38;
+    --tw-border-default: #424254;
+    --tw-border-strong: #74748a;
+    --tw-border-accent: #9479ff;
+    --tw-border-focus: #b8a6ff;
+    --tw-border-error: #ff6b6b;
+    --tw-bg-accent-2: #2ec4ae;
+    --tw-bg-accent-2-hover: #6fdccb;
+    --tw-bg-accent-2-subtle: #062a26;
+    --tw-text-accent-2: #6fdccb;
+    --tw-text-on-accent-2: #101016;
+    --tw-icon-accent-2: #6fdccb;
+    --tw-border-accent-2: #2ec4ae;
+    --tw-bg-accent-3: #ff6f91;
+    --tw-bg-accent-3-hover: #ff9cb3;
+    --tw-bg-accent-3-subtle: #3a0a1a;
+    --tw-text-accent-3: #ff9cb3;
+    --tw-text-on-accent-3: #101016;
+    --tw-icon-accent-3: #ff9cb3;
+    --tw-border-accent-3: #ff6f91;
+  }
+}
+
+:root[data-theme='dark'] {
+  --tw-bg-canvas: #101016;
+  --tw-bg-surface: #18181f;
+  --tw-bg-surface-raised: #21212c;
+  --tw-bg-subtle: #2b2b38;
+  --tw-bg-hover: #2b2b38;
+  --tw-bg-pressed: #424254;
+  --tw-bg-disabled: #2b2b38;
+  --tw-bg-accent: #9479ff;
+  --tw-bg-accent-hover: #b8a6ff;
+  --tw-bg-accent-subtle: #1f0f57;
+  --tw-bg-inverse: #f6f6f9;
+  --tw-bg-highlight: #ffd147;
+  --tw-bg-success-subtle: #0e2a1c;
+  --tw-bg-warning-subtle: #2e2008;
+  --tw-bg-error-subtle: #330f12;
+  --tw-bg-error: #ff6b6b;
+  --tw-bg-scrim: #101016a3;
+  --tw-text-primary: #f6f6f9;
+  --tw-text-secondary: #a0a0b0;
+  --tw-text-disabled: #5a5a6e;
+  --tw-text-on-accent: #101016;
+  --tw-text-accent: #b8a6ff;
+  --tw-text-inverse: #18181f;
+  --tw-text-success: #34c77b;
+  --tw-text-warning: #ffb547;
+  --tw-text-error: #ff6b6b;
+  --tw-text-on-highlight: #18181f;
+  --tw-icon-primary: #f6f6f9;
+  --tw-icon-secondary: #a0a0b0;
+  --tw-icon-accent: #b8a6ff;
+  --tw-icon-on-accent: #101016;
+  --tw-icon-success: #34c77b;
+  --tw-icon-warning: #ffb547;
+  --tw-icon-error: #ff6b6b;
+  --tw-border-subtle: #2b2b38;
+  --tw-border-default: #424254;
+  --tw-border-strong: #74748a;
+  --tw-border-accent: #9479ff;
+  --tw-border-focus: #b8a6ff;
+  --tw-border-error: #ff6b6b;
+  --tw-bg-accent-2: #2ec4ae;
+  --tw-bg-accent-2-hover: #6fdccb;
+  --tw-bg-accent-2-subtle: #062a26;
+  --tw-text-accent-2: #6fdccb;
+  --tw-text-on-accent-2: #101016;
+  --tw-icon-accent-2: #6fdccb;
+  --tw-border-accent-2: #2ec4ae;
+  --tw-bg-accent-3: #ff6f91;
+  --tw-bg-accent-3-hover: #ff9cb3;
+  --tw-bg-accent-3-subtle: #3a0a1a;
+  --tw-text-accent-3: #ff9cb3;
+  --tw-text-on-accent-3: #101016;
+  --tw-icon-accent-3: #ff9cb3;
+  --tw-border-accent-3: #ff6f91;
+}
+
+/* Non-colour tokens */
+:root {
+  --tw-space-0: 0px;
+  --tw-space-3xs: 2px;
+  --tw-space-2xs: 4px;
+  --tw-space-xs: 6px;
+  --tw-space-sm: 8px;
+  --tw-space-md: 12px;
+  --tw-space-lg: 16px;
+  --tw-space-xl: 20px;
+  --tw-space-2xl: 24px;
+  --tw-space-3xl: 32px;
+  --tw-space-4xl: 40px;
+  --tw-space-5xl: 48px;
+  --tw-space-6xl: 64px;
+  --tw-size-icon-sm: 16px;
+  --tw-size-icon-md: 20px;
+  --tw-size-icon-lg: 24px;
+  --tw-size-control-sm: 32px;
+  --tw-size-control-md: 40px;
+  --tw-size-control-lg: 48px;
+  --tw-size-popup-width: 360px;
+  --tw-size-settings-max: 1120px;
+  --tw-radius-xs: 4px;
+  --tw-radius-sm: 6px;
+  --tw-radius-md: 10px;
+  --tw-radius-lg: 14px;
+  --tw-radius-xl: 20px;
+  --tw-radius-full: 999px;
+  --tw-border-width-default: 1px;
+  --tw-border-width-focus: 2px;
+  --tw-motion-duration-instant: 0ms;
+  --tw-motion-duration-fast: 120ms;
+  --tw-motion-duration-base: 200ms;
+  --tw-motion-duration-slow: 320ms;
+  --tw-z-base: 0;
+  --tw-z-raised: 10;
+  --tw-z-dropdown: 100;
+  --tw-z-sticky: 200;
+  --tw-z-overlay: 1000;
+  --tw-z-toast: 1100;
+  --tw-motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --tw-motion-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --tw-motion-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Accent variations (Settings > Appearance). Focus ring stays violet. */
+:root[data-accent='mint'] {
+  --tw-bg-accent: var(--tw-bg-accent-2);
+  --tw-bg-accent-hover: var(--tw-bg-accent-2-hover);
+  --tw-bg-accent-subtle: var(--tw-bg-accent-2-subtle);
+  --tw-text-accent: var(--tw-text-accent-2);
+  --tw-text-on-accent: var(--tw-text-on-accent-2);
+  --tw-icon-accent: var(--tw-icon-accent-2);
+  --tw-border-accent: var(--tw-border-accent-2);
+}
+
+:root[data-accent='coral'] {
+  --tw-bg-accent: var(--tw-bg-accent-3);
+  --tw-bg-accent-hover: var(--tw-bg-accent-3-hover);
+  --tw-bg-accent-subtle: var(--tw-bg-accent-3-subtle);
+  --tw-text-accent: var(--tw-text-accent-3);
+  --tw-text-on-accent: var(--tw-text-on-accent-3);
+  --tw-icon-accent: var(--tw-icon-accent-3);
+  --tw-border-accent: var(--tw-border-accent-3);
+}
+
+/* Reduced motion: everything becomes instant */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --tw-motion-duration-fast: 0ms;
+    --tw-motion-duration-base: 0ms;
+    --tw-motion-duration-slow: 0ms;
+  }
+}

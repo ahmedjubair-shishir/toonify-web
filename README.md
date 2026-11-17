@@ -2,7 +2,7 @@
 
 Make the web feel illustrated. A browser extension that adds a reversible, cartoon-inspired visual layer to websites while keeping them fully usable.
 
-> Status: **Milestone 0 (technical spike)**. One on/off switch that adds and removes a small, namespaced visual treatment. See [`docs/milestone-0.md`](docs/milestone-0.md).
+> Status: **Milestone 1 (extension shell and popup)**. Per-site access chosen by the user, global and per-site switches, popup built from the Figma design. Visual presets arrive in Milestone 2. See [`docs/milestone-1.md`](docs/milestone-1.md).
 
 - Product spec: [`TOONIFY_WEB_PROJECT_GUIDE.md`](TOONIFY_WEB_PROJECT_GUIDE.md)
 - Design (Figma): https://www.figma.com/design/21MI0e4PD5heuxkkD87cPO/Toonify-Ext
@@ -47,7 +47,7 @@ npm run build
 1. Open `chrome://extensions`
 2. Turn on **Developer mode** (top right)
 3. Click **Load unpacked** and pick the `.output/chrome-mv3` folder
-4. Pin Toonify from the puzzle-piece menu, open any website, click the icon, flip the switch
+4. Pin Toonify from the puzzle-piece menu, open any website, click the icon and choose **Allow on {site}**
 
 After rebuilding, press the reload icon on the Toonify card in `chrome://extensions`.
 
@@ -66,6 +66,10 @@ After rebuilding, press the reload icon on the Toonify card in `chrome://extensi
 | `npm run test:e2e`    | Build, then browser tests with Playwright     |
 | `npm run check`       | Type check + lint + format check + unit tests |
 
+### How access works
+
+Toonify asks for nothing at install. On each website, the popup offers **Allow on {site}**; Chrome confirms, and from then on Toonify runs on that site (all tabs, reloads, restarts) until you switch it off or press **Reset site**. Other sites are never affected. Details: [`docs/milestone-1.md`](docs/milestone-1.md).
+
 ### First-time Playwright setup
 
 ```sh
@@ -79,14 +83,20 @@ Branded Google Chrome no longer accepts `--load-extension`, so browser tests use
 ```
 src/
   entrypoints/        # WXT entry points (become manifest entries)
-    background.ts     # service worker: defaults on install
-    content.ts        # runs in web pages: applies/removes the layer
-    popup/            # React popup (360px)
+    background.ts     # service worker: per-site script registration, permission events
+    content.ts        # runs on allowed sites: applies/removes the layer
+    popup/            # React popup (360px): App, usePopupState, components/
+  background/
+    content-registration.ts
   content/
     toonify-layer.ts  # add/remove logic + layer guard for dynamic pages
   core/
-    settings.ts       # typed storage items
+    settings.ts       # validated settings model (global + per site)
+    site.ts           # what counts as a "site", match patterns
+    permissions.ts    # optional host permissions per site
+    messaging.ts      # typed message contracts
     restricted-pages.ts
+    tokens/tokens.css # generated from the Figma variables
 tests/
   unit/               # Vitest (happy-dom + WXT fake browser)
   e2e/                # Playwright with the real extension loaded
