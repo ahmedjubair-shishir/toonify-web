@@ -43,7 +43,13 @@ Nothing is stored on the server. Generated images include Google's invisible Syn
 
 ### 4. Tell the extension where the server is
 
-The server URL is set at build time (next step of development).
+Create a file named `.env.production` in the repository root (next to `package.json`) with one line:
+
+```
+WXT_CARTOONIZE_URL=https://YOUR-PROJECT.vercel.app/api/cartoonize
+```
+
+This is not a secret (it is visible in the extension anyway). Then run `npm run build` and reload the extension. Without this file, the Cartoonize chip is hidden.
 
 ## Tests
 

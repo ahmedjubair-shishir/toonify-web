@@ -20,11 +20,17 @@ export interface Settings {
   globalEnabled: boolean;
   /** Per-site choices, keyed by site (host without "www."). */
   sites: Record<string, SiteSettings>;
+  /**
+   * The user agreed that images they choose to cartoonize are sent to the AI
+   * service (spec: explicit consent before any upload). Off until they agree.
+   */
+  aiConsent: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   globalEnabled: true,
   sites: {},
+  aiConsent: false,
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -57,7 +63,9 @@ export function parseSettings(raw: unknown): Settings {
     }
   }
 
-  return { globalEnabled, sites };
+  const aiConsent = raw.aiConsent === true;
+
+  return { globalEnabled, sites, aiConsent };
 }
 
 /** Is Toonify meant to style this site right now? */
@@ -90,6 +98,11 @@ export async function updateSettings(change: (draft: Settings) => void): Promise
 export const setGlobalEnabled = (enabled: boolean) =>
   updateSettings((s) => {
     s.globalEnabled = enabled;
+  });
+
+export const setAiConsent = (consent: boolean) =>
+  updateSettings((s) => {
+    s.aiConsent = consent;
   });
 
 /** Turns a site on or off, keeping its chosen style. */

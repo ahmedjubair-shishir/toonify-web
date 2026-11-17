@@ -36,7 +36,11 @@ describe('parseSettings (untrusted stored data)', () => {
       },
       unknownField: 'ignored',
     });
-    expect(parsed).toEqual({ globalEnabled: false, sites: { 'wikipedia.org': { enabled: true } } });
+    expect(parsed).toEqual({
+      globalEnabled: false,
+      sites: { 'wikipedia.org': { enabled: true } },
+      aiConsent: false,
+    });
   });
 
   it('keeps a valid style choice and drops invalid ones', () => {
@@ -54,6 +58,12 @@ describe('parseSettings (untrusted stored data)', () => {
     });
   });
 
+  it('AI consent is off unless explicitly true', () => {
+    expect(parseSettings({}).aiConsent).toBe(false);
+    expect(parseSettings({ aiConsent: 'yes' }).aiConsent).toBe(false);
+    expect(parseSettings({ aiConsent: true }).aiConsent).toBe(true);
+  });
+
   it('returns a fresh object, never the shared default', () => {
     const a = parseSettings(undefined);
     a.sites['x.com'] = { enabled: true };
@@ -63,13 +73,15 @@ describe('parseSettings (untrusted stored data)', () => {
 
 describe('isSiteActive', () => {
   it('needs the global switch AND an enabled site', () => {
-    const settings = { globalEnabled: true, sites: { [wiki]: { enabled: true } } };
+    const settings = {
+      globalEnabled: true,
+      sites: { [wiki]: { enabled: true } },
+      aiConsent: false,
+    };
     expect(isSiteActive(settings, wiki)).toBe(true);
     expect(isSiteActive(settings, youtube)).toBe(false); // other sites untouched
     expect(isSiteActive({ ...settings, globalEnabled: false }, wiki)).toBe(false);
-    expect(isSiteActive({ globalEnabled: true, sites: { [wiki]: { enabled: false } } }, wiki)).toBe(
-      false,
-    );
+    expect(isSiteActive({ ...settings, sites: { [wiki]: { enabled: false } } }, wiki)).toBe(false);
   });
 });
 

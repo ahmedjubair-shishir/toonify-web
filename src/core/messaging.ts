@@ -17,13 +17,28 @@ export interface MessageMap {
     request: { site: SiteKey };
     response: { injectedTabs: number };
   };
+  /**
+   * Content script -> background: redraw one image the user clicked.
+   * The background calls the owner's server (only after AI consent).
+   */
+  'toonify/cartoonize': {
+    request: { imageUrl: string; width: number; height: number };
+    response: CartoonizeResult;
+  };
 }
+
+export type CartoonizeResult =
+  { ok: true; mimeType: string; base64: string } | { ok: false; code: string; message: string };
 
 export type MessageType = keyof MessageMap;
 export type Message<T extends MessageType = MessageType> = { type: T } & MessageMap[T]['request'];
 export type Response<T extends MessageType> = MessageMap[T]['response'];
 
-const MESSAGE_TYPES: readonly MessageType[] = ['toonify/get-status', 'toonify/site-allowed'];
+const MESSAGE_TYPES: readonly MessageType[] = [
+  'toonify/get-status',
+  'toonify/site-allowed',
+  'toonify/cartoonize',
+];
 
 export function isMessage(value: unknown): value is Message {
   if (typeof value !== 'object' || value === null) return false;
@@ -42,8 +57,14 @@ export function sendToTab<T extends MessageType>(
   return browser.tabs.sendMessage(tabId, message) as Promise<Response<T>>;
 }
 
+/** Who sent a message (tab and frame for content scripts). */
+export interface Sender {
+  tab?: { id?: number | undefined; url?: string | undefined } | undefined;
+  url?: string | undefined;
+}
+
 type Handlers = {
-  [T in MessageType]?: (message: Message<T>) => Promise<Response<T>> | Response<T>;
+  [T in MessageType]?: (message: Message<T>, sender: Sender) => Promise<Response<T>> | Response<T>;
 };
 
 /**
@@ -51,12 +72,12 @@ type Handlers = {
  * messages are ignored. Returns a function that removes the listener.
  */
 export function onMessages(handlers: Handlers): () => void {
-  const listener = (message: unknown) => {
+  const listener = (message: unknown, sender: Sender) => {
     if (!isMessage(message)) return undefined;
-    const handler = handlers[message.type] as ((m: Message) => unknown) | undefined;
+    const handler = handlers[message.type] as ((m: Message, s: Sender) => unknown) | undefined;
     if (!handler) return undefined;
     // Returning a promise tells the browser we will answer asynchronously.
-    return Promise.resolve(handler(message));
+    return Promise.resolve(handler(message, sender));
   };
   browser.runtime.onMessage.addListener(listener);
   return () => browser.runtime.onMessage.removeListener(listener);

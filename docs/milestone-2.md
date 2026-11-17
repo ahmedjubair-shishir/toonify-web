@@ -5,6 +5,7 @@ Goal (spec 14): token system, Classic Cartoon preset, at least two more presets,
 ## Step 1 - Engine + Classic Cartoon (done)
 
 ### How it works
+
 1. **Theme = data** (`src/core/themes/`). A theme is a small object: line thickness, corner radius, button lift, ink strength, image colour treatment. New presets are new files registered in `themes/index.ts`.
 2. **Classifier** (`src/content/classify.ts`) marks only safe elements with `data-toonify="media" | "button" | "field"`:
    - media: `img` at least 48x48 px rendered, not `role="presentation"`
@@ -20,10 +21,12 @@ Goal (spec 14): token system, Classic Cartoon preset, at least two more presets,
 4. **Layer** still has one attribute and one `<style>`. Removing it also clears every mark.
 
 ### Tests
+
 - Unit: classifier rules (icons, icon-only buttons, decorative images, nested/tiny buttons, no-go zones), CSS scope, no layout properties, in-place theme swap, mark cleanup.
 - E2E (`theme.spec.ts`, fixture `theme.html`): marks and styles, icons/editors untouched, late content picked up, element boxes unchanged, focus ring kept, full cleanup on turning off. Mutation-checked: allowing icon-only buttons makes it fail.
 
 ### Known limits (next steps)
+
 - Cards, tables, headings not styled yet (generic "card" detection needs care).
 - Image size is checked when added/loaded; images resized later by responsive layouts are not re-checked yet.
 - Not yet tried on real sites by the owner.
@@ -50,18 +53,30 @@ Owner asked whether images can be converted into the chosen style. Options revie
 - Known limits: CSS background images and `<picture>`/video are not redrawn yet; per-channel bands can still show small colour blotches on near-white areas (most visible in Comic Book).
 
 ### Decision (17 Nov 2026)
+
 Owner reviewed the filter redraw on real pages: not nice enough. Decisions:
+
 - Filter redraw is **off** in all three styles (`cartoon: null`); the engine and tuned recipes stay in code for a possible optional effect.
 - The real cartoon redraw will be **cloud AI, on click** ("Cartoonize" on an image, Figma: Image Action Chip + AI consent dialog). Needs consent, a small server holding the API key, and a paid image API.
 
 ## AI Cartoonize - server (step 1 of the AI feature, done in code, not deployed)
+
 Owner chose **Gemini** (cloud, on click). Pulled forward from Milestone 6.
+
 - `server/`: Vercel Function `POST /api/cartoonize` (see `server/README.md`). Gemini Interactions API, default model `gemini-3.1-flash-lite-image` (configurable), 1K JPEG output, nearest supported aspect ratio.
 - Safety: extension origins only (+ id allow-list before publishing), anonymous install id, Upstash rate limits (per user/hour + global/day; required in production), SSRF protection with redirect re-checks, raster-only, 8 MB cap, safe error messages.
 - Tests: 36 server tests with stand-ins for Gemini and the network (mutation-checked on redirect re-validation). **Not yet run against real Gemini** (needs owner's key).
-- Next: extension side - Cartoonize chip, first-use consent, background call, swap image with undo, restore on off/reset.
+- Extension side (done, tested with a fake server):
+  - **Chip:** "Cartoonize" appears on styled photos under the pointer (also below transparent overlays). It lives in a shadow root, closed in store builds, and is built without HTML strings.
+  - **Consent:** the first click opens the consent dialog (native `<dialog>`, focus on "Not now", Esc = decline). The answer is saved as `settings.aiConsent`.
+  - **Background checks:** sender tab, site on, consent, http(s) image only. It then posts `{imageUrl, style, width, height}` with an anonymous install id.
+  - **Swap:** the photo is replaced through a `blob:` URL (works under strict page CSP in Chrome, tested). "Show original" undoes it, and turning the site off or unloading the extension restores every original.
+  - **Abuse guard:** only trusted (real) clicks can send an image. Tested, and mutation-checked.
+  - **Build config:** `WXT_CARTOONIZE_URL` (`.env.production`; `.env.e2e` points at `tests/fixtures/fake-cartoonize.mjs`).
+- Not yet: keyboard access to the chip (planned: right-click menu "Cartoonize this image"), a revoke-consent control in the popup/settings, Firefox check, a real Gemini run.
 
 ## Next steps
+
 3. Real-site pass (news, shopping, video, docs, social) and tuning.
 4. Reset and exclusion polish from that pass (e.g. images resized after load).
 5. Update the Figma popup (Style list) to match, until the Milestone 3 preview picker replaces it.

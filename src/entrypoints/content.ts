@@ -1,5 +1,7 @@
 import { defineContentScript } from '#imports';
+import { createCartoonizeUi, type CartoonizeUi } from '@/content/cartoonize-ui';
 import { createClassifier } from '@/content/classify';
+import { isCartoonizeAvailable } from '@/core/config';
 import { buildThemeCss } from '@/content/theme-css';
 import {
   applyLayer,
@@ -9,8 +11,14 @@ import {
   type LayerContent,
 } from '@/content/toonify-layer';
 import { getTheme } from '@/core/themes';
-import { onMessages } from '@/core/messaging';
-import { getSettings, isSiteActive, watchSettings, type Settings } from '@/core/settings';
+import { onMessages, sendToBackground } from '@/core/messaging';
+import {
+  getSettings,
+  isSiteActive,
+  setAiConsent,
+  watchSettings,
+  type Settings,
+} from '@/core/settings';
 import { siteKeyFromUrl } from '@/core/site';
 
 declare global {
@@ -47,13 +55,31 @@ export default defineContentScript({
       () => content,
     );
     const classifier = createClassifier(document);
+    // AI Cartoonize chip: only when the build has a server and the site is on.
+    let cartoonizeUi: CartoonizeUi | null = null;
+    const startCartoonize = () => {
+      if (cartoonizeUi !== null || !isCartoonizeAvailable()) return;
+      cartoonizeUi = createCartoonizeUi(document, {
+        hasConsent: async () => (await getSettings()).aiConsent,
+        giveConsent: async () => {
+          await setAiConsent(true);
+        },
+        requestCartoon: (image) => sendToBackground({ type: 'toonify/cartoonize', ...image }),
+      });
+    };
+    const stopCartoonize = () => {
+      cartoonizeUi?.destroy(); // also restores every original image
+      cartoonizeUi = null;
+    };
 
     const sync = () => {
       if (active) {
         applyLayer(document, content);
         guard.start();
         classifier.start();
+        startCartoonize();
       } else {
+        stopCartoonize();
         classifier.stop();
         guard.stop();
         removeLayer(document);
@@ -80,6 +106,7 @@ export default defineContentScript({
     ctx.onInvalidated(() => {
       unwatch();
       stopMessages();
+      stopCartoonize();
       classifier.stop();
       guard.stop();
       removeLayer(document);

@@ -1,4 +1,5 @@
 import { browser, defineBackground } from '#imports';
+import { cartoonize } from '@/background/cartoonize';
 import { injectIntoOpenTabs, syncContentScripts } from '@/background/content-registration';
 import { onMessages } from '@/core/messaging';
 import { removeLegacyKeys, setSiteEnabled, updateSettings, withoutSites } from '@/core/settings';
@@ -43,5 +44,7 @@ export default defineBackground(() => {
       await syncContentScripts();
       return { injectedTabs: await injectIntoOpenTabs(originsForSite(site)) };
     },
+    // Content script asks to redraw one image (all checks happen inside).
+    'toonify/cartoonize': (message, sender) => cartoonize(message, sender),
   });
 });
