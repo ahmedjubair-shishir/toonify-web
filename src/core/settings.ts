@@ -1,6 +1,7 @@
 import { storage } from '#imports';
 import { DEFAULT_AI_TOOL, isAiToolId } from './ai-tools';
 import { parseEffects, type EffectId } from './effects';
+import { isIconLookId, isIconSetId, type IconLookId, type IconSetId } from './icons';
 import type { SiteKey } from './site';
 
 /**
@@ -14,6 +15,10 @@ export interface SiteSettings {
   theme?: string;
   /** Effect switches for this site. Missing = all off. */
   effects?: Partial<Record<EffectId, boolean>>;
+  /** Icon set for this site. Missing = the site's own icons. */
+  iconSet?: IconSetId;
+  /** Icon look for this site. Missing = plain. */
+  iconLook?: IconLookId;
 }
 
 /** Theme ids are short kebab-case names; anything else is ignored. */
@@ -67,6 +72,8 @@ export function parseSettings(raw: unknown): Settings {
           entry.theme = value.theme;
         const effects = parseEffects(value.effects);
         if (effects) entry.effects = effects;
+        if (isIconSetId(value.iconSet)) entry.iconSet = value.iconSet;
+        if (isIconLookId(value.iconLook)) entry.iconLook = value.iconLook;
         sites[key] = entry;
       }
     }
@@ -142,6 +149,16 @@ export const setSiteEffect = (site: SiteKey, effect: EffectId, on: boolean) =>
 export const setSiteTheme = (site: SiteKey, theme: string) =>
   updateSettings((s) => {
     s.sites[site] = { ...s.sites[site], enabled: s.sites[site]?.enabled ?? false, theme };
+  });
+
+/** Picks the icon set and/or look for a site. Does not turn the site on or off. */
+export const setSiteIcons = (site: SiteKey, change: { set?: IconSetId; look?: IconLookId }) =>
+  updateSettings((s) => {
+    const current = s.sites[site];
+    const next: SiteSettings = { ...current, enabled: current?.enabled ?? false };
+    if (change.set !== undefined) next.iconSet = change.set;
+    if (change.look !== undefined) next.iconLook = change.look;
+    s.sites[site] = next;
   });
 
 /** Returns a copy of `sites` without the given keys. */

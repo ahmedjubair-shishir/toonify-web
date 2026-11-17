@@ -1,9 +1,12 @@
 import { browser, defineContentScript } from '#imports';
+import type { PublicPath } from 'wxt/browser';
 import { buildEffectsCss } from '@/content/effects-css';
 import { applyScheme } from '@/content/page-scheme';
 import { resolveEffects } from '@/core/effects';
 import { createCartoonizeUi, type CartoonizeUi } from '@/content/cartoonize-ui';
-import { createClassifier } from '@/content/classify';
+import { clearIconMarks, createClassifier } from '@/content/classify';
+import { buildIconsCss, needsIconSketch } from '@/content/icons-css';
+import { iconsActive, resolveIcons } from '@/core/icons';
 import { getAiTool, stylePrompt } from '@/core/ai-tools';
 import { buildThemeCss } from '@/content/theme-css';
 import {
@@ -53,23 +56,37 @@ export default defineContentScript({
     const contentFor = (settings: Settings): LayerContent => {
       const theme = getTheme(settings.sites[site]?.theme);
       const effects = resolveEffects(settings.sites[site]?.effects);
+      const icons = iconsFor(settings);
       return {
-        css: buildThemeCss(theme) + buildEffectsCss(theme, effects, fonts),
-        filters: { cartoon: theme.cartoon, sketch: effects.sketch },
+        css:
+          buildThemeCss(theme) +
+          buildEffectsCss(theme, effects, fonts) +
+          buildIconsCss(icons, iconUrl),
+        filters: {
+          cartoon: theme.cartoon,
+          sketch: effects.sketch,
+          iconSketch: needsIconSketch(icons),
+        },
       };
     };
+    // Icon files are generated at build time, so WXT's path list doesn't know them.
+    const iconUrl = (path: string) => browser.runtime.getURL(path as PublicPath);
+    const iconsFor = (settings: Settings) =>
+      resolveIcons(settings.sites[site]?.iconSet, settings.sites[site]?.iconLook);
     const initial = await getSettings();
     let active = isSiteActive(initial, site);
     let content = contentFor(initial);
     // AI tool and style instruction, kept current for the Cartoonize chip.
     let aiTool = getAiTool(initial.aiTool);
     let themeId = getTheme(initial.sites[site]?.theme).id;
+    // Icons are only looked for while the icon feature changes something.
+    let findIcons = iconsActive(iconsFor(initial));
     const guard = createLayerGuard(
       document,
       () => active,
       () => content,
     );
-    const classifier = createClassifier(document);
+    const classifier = createClassifier(document, undefined, { icons: () => findIcons });
     // AI Cartoonize chip: only when the site is on and an AI tool is picked.
     let cartoonizeUi: CartoonizeUi | null = null;
     const startCartoonize = () => {
@@ -123,10 +140,17 @@ export default defineContentScript({
       const nextContent = contentFor(settings);
       const nextTool = getAiTool(settings.aiTool);
       themeId = getTheme(settings.sites[site]?.theme).id;
+      const nextFindIcons = iconsActive(iconsFor(settings));
       if (next === active && nextContent.css === content.css && nextTool.id === aiTool.id) return;
       active = next;
       content = nextContent;
       aiTool = nextTool;
+      if (nextFindIcons !== findIcons) {
+        // Restart so the classifier starts (or stops) looking for icons.
+        findIcons = nextFindIcons;
+        classifier.stop();
+        if (!findIcons) clearIconMarks(document);
+      }
       sync();
     });
 

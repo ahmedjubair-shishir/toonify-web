@@ -129,10 +129,13 @@ describe('buildEffectsCss', () => {
     expect(css).toContain('[data-toonify="heading"]');
   });
 
-  it('comic background is click-through and changes with the style', () => {
+  it('comic background is click-through and differs per texture kind', () => {
     const textures = THEMES.map((theme) => buildEffectsCss(theme, only('texture'), fonts));
     for (const css of textures) expect(css).toContain('pointer-events: none');
-    expect(new Set(textures).size).toBe(THEMES.length);
+    // One look per texture kind (several styles may share a texture).
+    const kinds = new Set(THEMES.map((theme) => theme.texture));
+    expect(new Set(textures).size).toBe(kinds.size);
+    expect(kinds.size).toBeGreaterThanOrEqual(5);
   });
 
   it('the sketch filter is a fixed-seed wobble (no shimmer)', () => {

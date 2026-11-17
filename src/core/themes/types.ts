@@ -30,6 +30,19 @@ export interface CartoonFilter {
   edgeWidth: number;
 }
 
+export type Texture = 'grid' | 'halftone' | 'paper' | 'canvas' | 'newsprint' | 'pop';
+
+/** CSS filter values for photos. Missing = unchanged. */
+export interface MediaTreatment {
+  saturate: number;
+  contrast: number;
+  sepia: number;
+  grayscale?: number;
+  brightness?: number;
+  /** Degrees. */
+  hueRotate?: number;
+}
+
 export interface ThemeTokens {
   id: string;
   name: string;
@@ -41,6 +54,14 @@ export interface ThemeTokens {
    * sites without guessing the site's colour scheme.
    */
   inkStrength: number;
+  /**
+   * Optional fixed ink colour (e.g. sepia brown, pure black). On dark pages
+   * the engine switches back to the element's own text colour so lines stay
+   * visible.
+   */
+  ink?: string;
+  /** Optional photo outline colour (e.g. a gold frame). Default: the ink. */
+  frame?: string;
   /** Line thickness in px. */
   line: { media: number; button: number; field: number };
   /** Corner radius in px. */
@@ -52,8 +73,8 @@ export interface ThemeTokens {
   /** Image redraw recipe, or null to keep the picture itself unchanged. */
   cartoon: CartoonFilter | null;
   /** Background pattern for the "Comic background" effect. */
-  texture: 'grid' | 'halftone' | 'paper';
+  texture: Texture;
   /** Colour treatment for content images, after the redraw (1 / 0 = unchanged). */
 
-  media: { saturate: number; contrast: number; sepia: number };
+  media: MediaTreatment;
 }

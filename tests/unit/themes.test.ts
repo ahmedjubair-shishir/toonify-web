@@ -40,9 +40,22 @@ describe.each(THEMES.map((theme) => [theme.name, theme] as const))(
       const selectors = selectorsOf(css);
       expect(selectors.length).toBeGreaterThan(0);
       for (const selector of selectors) {
+        // Either a marked element, or the page root itself (ink colour
+        // settings only, checked below).
         expect(selector.trim()).toMatch(
-          new RegExp(`^html\\[${ACTIVE_ATTRIBUTE}\\] \\[data-toonify="(media|button|field)"\\]`),
+          new RegExp(
+            `^html\\[${ACTIVE_ATTRIBUTE}\\](\\[data-toonify-scheme="dark"\\])?( \\[data-toonify="(media|button|field)"\\]|$)`,
+          ),
         );
+      }
+    });
+
+    it('root rules only set Toonify’s own ink variables', () => {
+      const rootBlocks = css.match(/^html\[[^\]]+\](\[[^\]]+\])? \{[^}]*\}/gm) ?? [];
+      expect(rootBlocks.length).toBe(2);
+      for (const block of rootBlocks) {
+        const props = block.match(/^\s*[a-z-]+(?=:)/gm)?.map((p) => p.trim()) ?? [];
+        for (const prop of props) expect(prop.startsWith('--toonify-')).toBe(true);
       }
     });
 

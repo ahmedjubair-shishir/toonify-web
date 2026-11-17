@@ -1,7 +1,7 @@
-import type { InkShadow, ThemeTokens } from '@/core/themes';
+import type { InkShadow, MediaTreatment, ThemeTokens } from '@/core/themes';
 import { MARK } from './classify';
 import { CARTOON_FILTER_ID } from './image-filter';
-import { ACTIVE_ATTRIBUTE } from './toonify-layer';
+import { ACTIVE_ATTRIBUTE, SCHEME_ATTRIBUTE } from './toonify-layer';
 
 /**
  * Turns a theme into CSS. Safety rules every theme gets for free:
@@ -13,19 +13,40 @@ import { ACTIVE_ATTRIBUTE } from './toonify-layer';
  * - Controls keep the site's own focus ring: our shadows switch off while a
  *   control has keyboard focus (:focus-visible).
  * - No !important, so a site's more specific rules still win.
+ *
+ * Ink lives in custom properties on <html> (--toonify-ink, --toonify-ink-soft,
+ * --toonify-frame). With `currentColor` they resolve per element, so lines
+ * follow each element's text colour. A theme's fixed ink (sepia, black...)
+ * is replaced by the text colour on dark pages, so lines stay visible.
  */
+
+/** CSS filter list for photos (only the parts a theme changes). */
+export function mediaFilter(media: MediaTreatment): string {
+  const parts = [
+    `saturate(${media.saturate})`,
+    `contrast(${media.contrast})`,
+    `sepia(${media.sepia})`,
+  ];
+  if (media.grayscale) parts.push(`grayscale(${media.grayscale})`);
+  if (media.brightness !== undefined && media.brightness !== 1)
+    parts.push(`brightness(${media.brightness})`);
+  if (media.hueRotate) parts.push(`hue-rotate(${media.hueRotate}deg)`);
+  return parts.join(' ');
+}
+
+const mix = (colour: string, percent: number) =>
+  `color-mix(in srgb, ${colour} ${Math.round(percent)}%, transparent)`;
+
 export function buildThemeCss(theme: ThemeTokens): string {
   const root = `html[${ACTIVE_ATTRIBUTE}]`;
-  const ink = `color-mix(in srgb, currentColor ${theme.inkStrength}%, transparent)`;
+  const dark = `html[${ACTIVE_ATTRIBUTE}][${SCHEME_ATTRIBUTE}="dark"]`;
+  const base = theme.ink ?? 'currentColor';
   const { line, radius, media } = theme;
 
   // Hard shadows are solid ink; blurred ones are a lighter, softer ink.
   const shadow = (s: InkShadow | null, spread = 0) => {
     if (s === null) return '';
-    const colour =
-      s.blur === 0
-        ? ink
-        : `color-mix(in srgb, currentColor ${Math.round(theme.inkStrength / 2)}%, transparent)`;
+    const colour = s.blur === 0 ? 'var(--toonify-ink)' : 'var(--toonify-ink-soft)';
     return `, ${s.x}px ${s.y}px ${s.blur}px ${s.blur === 0 ? spread : 0}px ${colour}`;
   };
   const mediaShadow = shadow(theme.mediaShadow).replace(/^, /, '');
@@ -33,25 +54,32 @@ export function buildThemeCss(theme: ThemeTokens): string {
   const redraw = theme.cartoon === null ? '' : `url(#${CARTOON_FILTER_ID}) `;
 
   return `
+${root} {
+  --toonify-ink: ${mix(base, theme.inkStrength)};
+  --toonify-ink-soft: ${mix(base, theme.inkStrength / 2)};
+  --toonify-frame: ${theme.frame ?? 'var(--toonify-ink)'};
+}
+${dark} {
+  --toonify-ink: ${mix('currentColor', theme.inkStrength)};
+  --toonify-ink-soft: ${mix('currentColor', theme.inkStrength / 2)};
+}
 ${root} [${MARK}="media"] {
   border-radius: ${radius.media}px;
-  outline: ${line.media}px solid ${ink};
+  outline: ${line.media}px solid var(--toonify-frame);
   outline-offset: -${line.media}px;
-  filter: ${redraw}saturate(${media.saturate}) contrast(${media.contrast}) sepia(${media.sepia});${
-    mediaShadow ? `\n  box-shadow: ${mediaShadow};` : ''
-  }
+  filter: ${redraw}${mediaFilter(media)};${mediaShadow ? `\n  box-shadow: ${mediaShadow};` : ''}
 }
 ${root} [${MARK}="button"] {
   border-radius: ${radius.button}px;
 }
 ${root} [${MARK}="button"]:not(:focus-visible) {
-  box-shadow: 0 0 0 ${line.button}px ${ink}${shadow(theme.buttonShadow, line.button)};
+  box-shadow: 0 0 0 ${line.button}px var(--toonify-ink)${shadow(theme.buttonShadow, line.button)};
 }
 ${root} [${MARK}="field"] {
   border-radius: ${radius.field}px;
 }
 ${root} [${MARK}="field"]:not(:focus-visible) {
-  box-shadow: 0 0 0 ${line.field}px ${ink};
+  box-shadow: 0 0 0 ${line.field}px var(--toonify-ink);
 }
 `;
 }

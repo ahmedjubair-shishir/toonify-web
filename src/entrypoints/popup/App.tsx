@@ -2,6 +2,7 @@ import { Check, Lock, Pause, Power, RotateCcw, RotateCw, TriangleAlert, Ban } fr
 import { useState } from 'react';
 import { availableAiTools, getAiTool, isAiFeatureEnabled } from '@/core/ai-tools';
 import { EFFECTS, resolveEffects } from '@/core/effects';
+import { resolveIcons } from '@/core/icons';
 import { THEMES, getTheme } from '@/core/themes';
 import { Lockup } from './components/BrandMark';
 import { Button } from './components/Button';
@@ -12,6 +13,7 @@ import { SiteRow } from './components/SiteRow';
 import { SiteToggle } from './components/SiteToggle';
 import { AiToolPicker } from './components/AiToolPicker';
 import { EffectsList } from './components/EffectsList';
+import { IconPicker } from './components/IconPicker';
 import { ThemePicker } from './components/ThemePicker';
 import { Toast } from './components/Toast';
 import { usePopupState } from './usePopupState';
@@ -127,6 +129,10 @@ export function App() {
               effects={EFFECTS}
               value={resolveEffects(settings.sites[site]?.effects)}
               onChange={actions.setSiteEffect}
+            />
+            <IconPicker
+              value={resolveIcons(settings.sites[site]?.iconSet, settings.sites[site]?.iconLook)}
+              onChange={actions.setSiteIcons}
             />
             {isAiFeatureEnabled() && (
               <AiToolPicker

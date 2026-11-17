@@ -112,6 +112,35 @@ New **Effects**: per-site switches in the popup, default off (owner: "let users 
 - Tests: effects CSS safety per style, per-site settings, Latin detection (Bengali, Arabic, Japanese), scheme detection. E2E: each switch on/off from the popup, remembered after reload, everything removed when the site is turned off, strict-CSP page (font and lines still work), dark page gets light ink.
 - One e2e run had a single unexplained failure on a cold start; 3 later full runs were clean. Watch it.
 
+## All 11 styles (18 Nov 2026)
+
+Added the remaining presets from spec 4.1 / Figma: **Watercolor, Pencil Sketch, Pop Art, Oil Painting, Vintage Poster, Cel-Shaded, Monochrome Ink, Renaissance Painting** (descriptive name per the spec's naming note).
+
+- New theme tokens:
+  - `ink`: a fixed ink colour, e.g. graphite, sepia brown, pure black.
+  - `frame`: a photo outline colour, e.g. gold.
+  - `media.grayscale`, `media.brightness`, `media.hueRotate`.
+  - Textures `canvas`, `newsprint`, `pop`.
+- Ink is set once as CSS variables on `<html>` (`--toonify-ink`, `--toonify-ink-soft`, `--toonify-frame`). On dark pages a fixed ink switches back to the element's text colour.
+- Each style has a matching AI instruction (kept for the paused AI feature; still synced with the server by a test).
+- Tests: all 11 run through the same safety checks (scope, no layout properties, no `!important`, no broken values); root rules may only set Toonify's own variables; textures differ per kind. 200 unit, 18 e2e passing.
+- UX note for the owner: the popup style list is now long (11 rows). The Figma preset grid (Popup 06) is the planned fix.
+
+## Icon swap (owner request, 18 Nov 2026)
+
+Popup > **Icons**: pick a free icon **set** (Original, Lucide, Phosphor, Tabler) and a **look** (Plain, Cartoon, Sketched, Animated), per site. Any look works with any set. Style tiles now show an icon above the name, centred.
+
+- **Finding icons** (`src/content/icon-meaning.ts`, `classify.ts`): small svg, font icons (`<i class="fa ...">`, Material ligatures), and images under 48px. Only while the feature changes something; otherwise icons are not even looked for.
+- **Meaning** (`data-toonify-icon="search"` etc., 48 meanings): read from names sites already use - class names, sprite links (`#icon-search`), `data-icon`, ligature text, then `aria-label` / `title` / `alt`, then the label of an icon-only button. Never from pixels. Unknown icons get `other` and keep their drawing (looks still apply).
+- **Swap** (`src/content/icons-css.ts`): the new icon is a CSS mask filled with the text colour, so it suits light and dark sites. The old drawing is hidden (svg shapes invisible, font glyph transparent, image pushed out of its box). No layout changes; a site's own transform (e.g. a flipped chevron) stays.
+- **Looks**: cartoon (thicker lines + drop shadow) and sketched (noise wobble) are drawn inside the icon file, because a mask would cut off an outside filter. For the site's own icons, the looks are CSS filters. Animated: pop-in and a wiggle on hover/focus, using `rotate`/`scale` (not `transform`), only without reduced motion.
+- **Icon files**: generated at build time from `src/core/icon-sets.data.ts` (432 files: 3 sets x 3 drawn looks x 48) by a WXT `build:publicAssets` hook, served as web-accessible extension files.
+  - Decision: not data: URLs. A strict site policy (`img-src 'self'`) blocked data: masks in about 1 of 5 loads, and the icon vanished. Extension files loaded 8 of 8 times under the same policy.
+  - Trade-off: like the fonts, these files are visible to pages (a site could detect that Toonify is installed).
+- **Icon data**: `scripts/build-icon-sets.mjs` (`npm run icons:build` after `npm i --no-save lucide-static @phosphor-icons/core @tabler/icons`). The packages are not dependencies. Licences: Lucide ISC, Phosphor MIT, Tabler MIT, in `THIRD_PARTY_NOTICES.md`.
+- **Known limits**: a site rule on the icon's own background (e.g. `#id { background: ... }`) beats ours and can hide the swapped icon; meanings outside the 48 stay original.
+- Tests: 247 unit, 22 e2e passing (e2e checks real pixels: old drawing gone, new outline drawn, nothing moved, class change play -> pause, strict policy, reduced motion, popup keyboard).
+
 ## Next steps
 
 3. Real-site pass (news, shopping, video, docs, social) and tuning.

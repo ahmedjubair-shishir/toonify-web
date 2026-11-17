@@ -1,4 +1,5 @@
 import { defineConfig } from 'wxt';
+import { iconPublicFiles } from './src/core/icons';
 
 // WXT config reference: https://wxt.dev/api/reference/wxt/interfaces/inlineconfig.html
 export default defineConfig({
@@ -30,7 +31,18 @@ export default defineConfig({
     action: {
       default_title: 'Toonify Web',
     },
-    // Fonts for the "Playful headings" effect, loaded by pages Toonify styles.
-    web_accessible_resources: [{ resources: ['fonts/*.woff2'], matches: ['<all_urls>'] }],
+    // Fonts for "Playful headings" and drawings for the icon swap, loaded by
+    // pages Toonify styles. Extension files load even under strict site
+    // security policies, which block data: images.
+    web_accessible_resources: [
+      { resources: ['fonts/*.woff2', 'icons/*/*/*.svg'], matches: ['<all_urls>'] },
+    ],
   }),
+  hooks: {
+    // Icon files are generated from src/core/icon-sets.data.ts at build time
+    // (one per set, look and meaning), so they are never edited by hand.
+    'build:publicAssets': (_wxt, files) => {
+      files.push(...iconPublicFiles());
+    },
+  },
 });

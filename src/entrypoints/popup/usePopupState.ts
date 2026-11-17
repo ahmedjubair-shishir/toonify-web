@@ -12,11 +12,13 @@ import {
   setAiTool,
   setSiteEffect,
   setSiteEnabled,
+  setSiteIcons,
   setSiteTheme,
   watchSettings,
   type Settings,
 } from '@/core/settings';
 import type { EffectId } from '@/core/effects';
+import type { IconLookId, IconSetId } from '@/core/icons';
 import { siteKeyFromUrl, type SiteKey } from '@/core/site';
 
 /** Which popup screen to show (Figma: Popup page, frames 01 to 10). */
@@ -133,6 +135,9 @@ export function usePopupState() {
     },
     setSiteTheme: (theme: string) => {
       if (site) void setSiteTheme(site, theme);
+    },
+    setSiteIcons: (change: { set?: IconSetId; look?: IconLookId }) => {
+      if (site) void setSiteIcons(site, change);
     },
     /** Must run directly inside the click handler (Chrome needs a user gesture). */
     allowSite: async () => {

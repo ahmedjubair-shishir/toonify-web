@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Icons fixture</title>
+    <style>
+      body {
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+        margin: 24px;
+      }
+      .fa {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+      }
+      .fa-search::before {
+        content: 'S';
+      }
+      .material-icons {
+        display: inline-block;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        overflow: hidden;
+      }
+      #big {
+        color: rgb(255, 0, 0);
+      }
+      #chevron {
+        transform: rotate(180deg);
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <i id="fa" class="fa fa-search"></i>
+      <svg id="labelled" aria-label="Settings" width="24" height="24" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" fill="currentColor" />
+      </svg>
+      <button id="icon-button" aria-label="Close dialog">
+        <svg id="in-button" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24">
+          <rect x="4" y="4" width="16" height="16" fill="currentColor" />
+        </svg>
+      </button>
+      <img id="small-img" src="/heart.svg" width="24" height="24" alt="" />
+      <span id="ligature" class="material-icons">play_arrow</span>
+      <svg id="unknown" class="brand-logo" width="32" height="32" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" fill="currentColor" />
+      </svg>
+      <svg id="chevron" class="icon icon-chevron-down" width="20" height="20" viewBox="0 0 24 24">
+        <path d="M6 9l6 6 6-6" stroke="currentColor" fill="none" stroke-width="2" />
+      </svg>
+      <i id="toggle" class="fa fa-play"></i>
+      <i id="italic">just italic words</i>
+      <img id="photo" src="/photo.svg" width="240" height="160" alt="A photo" />
+    </div>
+    <div class="row">
+      <!-- A big icon with a solid square drawing, so tests can tell the old drawing from the new. -->
+      <svg id="big" class="icon-home" width="44" height="44" viewBox="0 0 24 24">
+        <rect width="24" height="24" fill="rgb(0, 0, 255)" />
+      </svg>
+    </div>
+  </body>
+</html>

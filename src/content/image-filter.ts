@@ -19,15 +19,19 @@ import type { CartoonFilter } from '@/core/themes';
 export const FILTER_ELEMENT_ID = 'toonify-web-filters';
 export const CARTOON_FILTER_ID = 'toonify-web-cartoon';
 export const SKETCH_FILTER_ID = 'toonify-web-sketch';
+export const ICON_SKETCH_FILTER_ID = 'toonify-web-icon-sketch';
 
-/** Filters a page needs: the image redraw (paused) and the hand-drawn wobble. */
+/** Filters a page needs: the image redraw (paused) and the hand-drawn wobbles. */
 export interface FilterSet {
   cartoon: CartoonFilter | null;
   sketch: boolean;
+  /** Finer wobble sized for small icons (icon look "Sketched"). */
+  iconSketch?: boolean;
 }
 
 export const NO_FILTERS: FilterSet = { cartoon: null, sketch: false };
-export const hasFilters = (filters: FilterSet) => filters.cartoon !== null || filters.sketch;
+export const hasFilters = (filters: FilterSet) =>
+  filters.cartoon !== null || filters.sketch || filters.iconSketch === true;
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -52,8 +56,8 @@ export function bands(levels: number): string {
 }
 
 /** Stable text form of the filters, to tell whether the element must change. */
-export const filterKey = ({ cartoon, sketch }: FilterSet) =>
-  `${cartoon === null ? '' : Object.values(cartoon).join('|')}/${sketch ? 'sketch' : ''}`;
+export const filterKey = ({ cartoon, sketch, iconSketch }: FilterSet) =>
+  `${cartoon === null ? '' : Object.values(cartoon).join('|')}/${sketch ? 'sketch' : ''}/${iconSketch ? 'icon' : ''}`;
 
 /**
  * Hand-drawn wobble: a soft noise field nudges each pixel by a couple of px,
@@ -77,6 +81,31 @@ function sketchFilterNode(doc: Document): Element {
         in: 'SourceGraphic',
         in2: 'noise',
         scale: 3,
+        xChannelSelector: 'R',
+        yChannelSelector: 'G',
+      }),
+    ],
+  );
+}
+
+/** The same idea at icon scale: finer noise, smaller nudge, so icons stay readable. */
+function iconSketchFilterNode(doc: Document): Element {
+  return el(
+    doc,
+    'filter',
+    { id: ICON_SKETCH_FILTER_ID, x: '-15%', y: '-15%', width: '130%', height: '130%' },
+    [
+      el(doc, 'feTurbulence', {
+        type: 'fractalNoise',
+        baseFrequency: 0.22,
+        numOctaves: 1,
+        seed: 3,
+        result: 'noise',
+      }),
+      el(doc, 'feDisplacementMap', {
+        in: 'SourceGraphic',
+        in2: 'noise',
+        scale: 2.6,
         xChannelSelector: 'R',
         yChannelSelector: 'G',
       }),
@@ -216,6 +245,7 @@ export function createFilterElement(doc: Document, filters: FilterSet): SVGSVGEl
   const nodes: Element[] = [];
   if (filters.cartoon !== null) nodes.push(cartoonFilterNode(doc, filters.cartoon));
   if (filters.sketch) nodes.push(sketchFilterNode(doc));
+  if (filters.iconSketch) nodes.push(iconSketchFilterNode(doc));
   const svg = el(
     doc,
     'svg',

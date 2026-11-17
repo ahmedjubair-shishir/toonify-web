@@ -1,7 +1,8 @@
 import type { Effects } from '@/core/effects';
-import type { InkShadow, ThemeTokens } from '@/core/themes';
+import type { InkShadow, Texture, ThemeTokens } from '@/core/themes';
 import { MARK } from './classify';
 import { SKETCH_FILTER_ID } from './image-filter';
+import { mediaFilter } from './theme-css';
 import { ACTIVE_ATTRIBUTE, SCHEME_ATTRIBUTE } from './toonify-layer';
 
 /**
@@ -50,16 +51,29 @@ function paperNoise(rgb: string, alpha: number): string {
   );
 }
 
-function texture(kind: ThemeTokens['texture'], dark: boolean): string {
+function texture(kind: Texture, dark: boolean): string {
   const line = dark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(27, 27, 47, 0.07)';
   const dot = dark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(27, 27, 47, 0.16)';
-  if (kind === 'halftone') {
-    return `background-image: radial-gradient(${dot} 1.2px, transparent 1.6px); background-size: 7px 7px;`;
+  switch (kind) {
+    case 'halftone':
+      return `background-image: radial-gradient(${dot} 1.2px, transparent 1.6px); background-size: 7px 7px;`;
+    case 'pop':
+      // Big Ben-Day dots, slightly coloured.
+      return `background-image: radial-gradient(${dark ? 'rgba(255, 120, 200, 0.16)' : 'rgba(230, 0, 120, 0.12)'} 2.4px, transparent 2.8px); background-size: 12px 12px;`;
+    case 'paper':
+      return `background-image: ${dark ? paperNoise('0.9', 0.18) : paperNoise('0.35', 0.22)}; background-size: 180px 180px;`;
+    case 'newsprint':
+      // Warm, slightly yellowed print paper with grain.
+      return `background-image: ${dark ? paperNoise('0.9', 0.16) : paperNoise('0.45', 0.26)}, linear-gradient(${dark ? 'rgba(255, 220, 160, 0.05)' : 'rgba(214, 170, 90, 0.12)'}, ${dark ? 'rgba(255, 220, 160, 0.05)' : 'rgba(214, 170, 90, 0.12)'}); background-size: 180px 180px, 100% 100%;`;
+    case 'canvas': {
+      // Diagonal woven canvas.
+      const weave = dark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(90, 60, 30, 0.07)';
+      return `background-image: repeating-linear-gradient(45deg, ${weave} 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, ${weave} 0 1px, transparent 1px 4px);`;
+    }
+    case 'grid':
+    default:
+      return `background-image: linear-gradient(${line} 1px, transparent 1px), linear-gradient(90deg, ${line} 1px, transparent 1px); background-size: 18px 18px;`;
   }
-  if (kind === 'paper') {
-    return `background-image: ${dark ? paperNoise('0.9', 0.18) : paperNoise('0.35', 0.22)}; background-size: 180px 180px;`;
-  }
-  return `background-image: linear-gradient(${line} 1px, transparent 1px), linear-gradient(90deg, ${line} 1px, transparent 1px); background-size: 18px 18px;`;
 }
 
 const liftOnly = (shadow: InkShadow | null, ink: string) =>
@@ -68,14 +82,14 @@ const liftOnly = (shadow: InkShadow | null, ink: string) =>
 export function buildEffectsCss(theme: ThemeTokens, effects: Effects, fonts: FontUrls): string {
   const root = `html[${ACTIVE_ATTRIBUTE}]`;
   const dark = `html[${ACTIVE_ATTRIBUTE}][${SCHEME_ATTRIBUTE}="dark"]`;
-  const ink = `color-mix(in srgb, currentColor ${theme.inkStrength}%, transparent)`;
+  const ink = 'var(--toonify-ink)';
   const media = `[${MARK}="media"]`;
   const button = `[${MARK}="button"]`;
   const field = `[${MARK}="field"]`;
   const parts: string[] = [];
 
   if (effects.sketch) {
-    const imageColour = `saturate(${theme.media.saturate}) contrast(${theme.media.contrast}) sepia(${theme.media.sepia})`;
+    const imageColour = mediaFilter(theme.media);
     parts.push(`
 ${root} ${button}, ${root} ${field} {
   background-image: ${sketchBox(DARK_INK)};

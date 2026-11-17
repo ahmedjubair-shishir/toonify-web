@@ -26,6 +26,17 @@ createServer(async (req, res) => {
     });
     return res.end(body);
   }
+  // Icons page under the strictest common policy: images only from the site itself
+  // (no data: URLs), to prove swapped icons still draw (or fall back cleanly).
+  if (path === '/csp-icons.html') {
+    const body = await readFile(join(root, 'icons.html'));
+    res.writeHead(200, {
+      'content-type': 'text/html; charset=utf-8',
+      'content-security-policy':
+        "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'none'",
+    });
+    return res.end(body);
+  }
   try {
     const body = await readFile(join(root, path === '/' ? 'static.html' : path));
     res.writeHead(200, { 'content-type': types[extname(path)] ?? 'application/octet-stream' });

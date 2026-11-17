@@ -676,3 +676,181 @@ p {
   line-height: 16px;
   color: var(--tw-text-secondary);
 }
+
+/* Style tiles (owner feedback: easier to scan than a list; Figma: Popup 06). */
+.tiles {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.tiles > legend {
+  padding: 0;
+  margin-bottom: var(--tw-space-xs);
+}
+
+.tiles__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--tw-space-xs);
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 76px;
+  padding: 10px 6px 8px;
+  border: 1px solid var(--tw-border-subtle);
+  border-radius: var(--tw-radius-md);
+  background: var(--tw-bg-surface);
+  text-align: center;
+  cursor: pointer;
+}
+
+.tile:hover {
+  background: var(--tw-bg-hover);
+}
+
+.tile:has(input:checked) {
+  border-color: var(--tw-border-accent);
+  background: var(--tw-bg-accent-subtle);
+  box-shadow: 0 0 0 1px var(--tw-border-accent);
+}
+
+.tile:has(input:focus-visible) {
+  outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
+  outline-offset: 2px;
+}
+
+/* Native radio stays for keyboard and screen readers, visually hidden. */
+.tile input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+}
+
+.tile__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--tw-radius-sm);
+  color: var(--tw-icon-accent);
+  background: var(--tw-bg-accent-subtle);
+}
+
+.tile:has(input:checked) .tile__icon {
+  color: var(--tw-icon-on-accent);
+  background: var(--tw-bg-accent);
+}
+
+.tile__check {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--tw-radius-full);
+  color: var(--tw-icon-on-accent);
+  background: var(--tw-bg-accent);
+}
+
+.tile__name {
+  font-size: 12px;
+  line-height: 15px;
+  font-weight: 500;
+}
+
+.effects__icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--tw-radius-sm);
+  color: var(--tw-icon-accent);
+  background: var(--tw-bg-accent-subtle);
+}
+
+.effects__row {
+  padding: 8px 0;
+}
+
+/* Icons section: two compact tile rows (set, look). */
+.icon-picker {
+  display: grid;
+  gap: var(--tw-space-xs);
+}
+
+.icon-picker > h2 {
+  margin: 0;
+}
+
+.tiles__sublegend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--tw-text-secondary);
+}
+
+.tiles__grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tile--compact {
+  min-height: 64px;
+  padding: 8px 4px 6px;
+}
+
+.tile--compact .tile__icon {
+  width: 30px;
+  height: 30px;
+}
+
+/* A real icon from the set, drawn as a mask in the current colour (like on pages). */
+.icon-preview {
+  display: block;
+  background: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+@keyframes tw-icon-wiggle {
+  0%,
+  100% {
+    rotate: 0deg;
+    scale: 1;
+  }
+  25% {
+    rotate: -12deg;
+    scale: 1.15;
+  }
+  50% {
+    rotate: 10deg;
+    scale: 1.15;
+  }
+  75% {
+    rotate: -6deg;
+    scale: 1.08;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tile:is(:hover, :has(input:focus-visible)) .icon-preview--animated {
+    animation: tw-icon-wiggle 0.6s ease-in-out;
+  }
+}

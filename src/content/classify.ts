@@ -4,7 +4,17 @@
  * anything not marked keeps the site's original look.
  *
  * Marks: data-toonify="media" | "button" | "field" | "heading".
+ * Icons get their own mark, data-toonify-icon="<meaning>" (see icon-meaning.ts),
+ * and only while the icon feature is on.
  */
+import {
+  ICON_CANDIDATES,
+  ICON_MARK,
+  MAX_ICON_SIZE,
+  MIN_ICON_SIZE,
+  iconMeaning,
+  looksLikeIcon,
+} from './icon-meaning';
 
 export const MARK = 'data-toonify';
 export type MarkKind = 'media' | 'button' | 'field' | 'heading';
@@ -89,6 +99,39 @@ export function classify(element: Element, measure: Measure = measureRendered): 
   return null;
 }
 
+/** Icons live in different places than content: aria-hidden is normal for them. */
+const ICON_NO_GO_ZONE =
+  '[contenteditable=""], [contenteditable="true"], [role="application"], [data-toonify-skip]';
+
+/** The icon's meaning, or null when the element is not an icon we restyle. */
+export function classifyIcon(element: Element, measure: Measure = measureRendered): string | null {
+  if (element.closest(ICON_NO_GO_ZONE) || !looksLikeIcon(element)) return null;
+  const { width, height } = measure(element);
+  const small = Math.min(width, height);
+  const large = Math.max(width, height);
+  if (small < MIN_ICON_SIZE || large > MAX_ICON_SIZE) return null;
+  // A 48px image is content (media), not an icon.
+  if (element instanceof HTMLImageElement && small >= MIN_MEDIA_SIZE) return null;
+  return iconMeaning(element);
+}
+
+export function updateIconMark(element: Element, measure: Measure = measureRendered): void {
+  const meaning = classifyIcon(element, measure);
+  if (meaning === null) element.removeAttribute(ICON_MARK);
+  else if (element.getAttribute(ICON_MARK) !== meaning) element.setAttribute(ICON_MARK, meaning);
+}
+
+/** Checks the icons in root (root included). */
+export function markIcons(root: ParentNode, measure: Measure = measureRendered): void {
+  if (root instanceof Element && root.matches(ICON_CANDIDATES)) updateIconMark(root, measure);
+  root.querySelectorAll(ICON_CANDIDATES).forEach((element) => updateIconMark(element, measure));
+}
+
+/** Removes every icon mark (icon feature switched off). */
+export function clearIconMarks(doc: Document): void {
+  doc.querySelectorAll(`[${ICON_MARK}]`).forEach((element) => element.removeAttribute(ICON_MARK));
+}
+
 /** Marks or unmarks one element to match classify(). */
 export function updateMark(element: Element, measure: Measure = measureRendered): void {
   const kind = classify(element, measure);
@@ -97,14 +140,20 @@ export function updateMark(element: Element, measure: Measure = measureRendered)
 }
 
 /** Classifies every candidate inside root (root included). */
-export function markTree(root: ParentNode, measure: Measure = measureRendered): void {
+export function markTree(
+  root: ParentNode,
+  measure: Measure = measureRendered,
+  icons = false,
+): void {
   if (root instanceof Element && root.matches(CANDIDATE_SELECTOR)) updateMark(root, measure);
   root.querySelectorAll(CANDIDATE_SELECTOR).forEach((element) => updateMark(element, measure));
+  if (icons) markIcons(root, measure);
 }
 
 /** Removes every mark (used when Toonify turns off). */
 export function clearMarks(doc: Document): void {
   doc.querySelectorAll(`[${MARK}]`).forEach((element) => element.removeAttribute(MARK));
+  clearIconMarks(doc);
 }
 
 export interface Classifier {
@@ -118,20 +167,53 @@ export interface Classifier {
  * cost one batch per frame, not one check per change. Images are re-checked
  * when they finish loading, because their size is unknown before that.
  */
-export function createClassifier(doc: Document, measure: Measure = measureRendered): Classifier {
+export interface ClassifierOptions {
+  /** Also find icons (only while the icon feature is on). Read at start(). */
+  icons?: () => boolean;
+}
+
+/** Attributes that only change what an icon means (e.g. play becomes pause). */
+const ICON_ATTRIBUTES = ['class', 'href', 'xlink:href', 'data-icon', 'aria-label', 'title'];
+const CLASSIFY_ATTRIBUTES = ['src', 'role', 'aria-hidden', 'contenteditable', 'data-toonify-skip'];
+
+export function createClassifier(
+  doc: Document,
+  measure: Measure = measureRendered,
+  options: ClassifierOptions = {},
+): Classifier {
   let observer: MutationObserver | null = null;
   let frame: number | null = null;
+  let icons = false;
   const pending = new Set<ParentNode>();
+  const pendingIcons = new Set<Element>();
 
   const flush = () => {
     frame = null;
     for (const node of pending)
-      if (node instanceof Document || node.isConnected) markTree(node, measure);
+      if (node instanceof Document || node.isConnected) markTree(node, measure, icons);
+    for (const element of pendingIcons) if (element.isConnected) markIcons(element, measure);
     pending.clear();
+    pendingIcons.clear();
   };
 
   const schedule = (node: ParentNode) => {
     pending.add(node);
+    frame ??= requestAnimationFrame(flush);
+  };
+
+  /**
+   * An icon attribute changed. Re-check only that icon (or the icons in an
+   * icon-only button), never a whole page section: some sites change classes
+   * on every scroll.
+   */
+  const scheduleIcon = (target: Element) => {
+    const svg = target.closest('svg');
+    let element: Element | null = null;
+    if (svg) element = svg;
+    else if (target.matches(ICON_CANDIDATES)) element = target;
+    else if (target.matches('button, a, [role="button"]')) element = target;
+    if (element === null) return;
+    pendingIcons.add(element);
     frame ??= requestAnimationFrame(flush);
   };
 
@@ -143,10 +225,13 @@ export function createClassifier(doc: Document, measure: Measure = measureRender
   return {
     start() {
       if (observer !== null) return;
+      icons = options.icons?.() ?? false;
       observer = new MutationObserver((records) => {
         for (const record of records) {
           if (record.type === 'attributes') {
-            if (record.target instanceof Element) schedule(record.target);
+            if (!(record.target instanceof Element)) continue;
+            if (CLASSIFY_ATTRIBUTES.includes(record.attributeName ?? '')) schedule(record.target);
+            else scheduleIcon(record.target);
             continue;
           }
           record.addedNodes.forEach((node) => {
@@ -161,7 +246,7 @@ export function createClassifier(doc: Document, measure: Measure = measureRender
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['src', 'role', 'aria-hidden', 'contenteditable', 'data-toonify-skip'],
+        attributeFilter: icons ? [...CLASSIFY_ATTRIBUTES, ...ICON_ATTRIBUTES] : CLASSIFY_ATTRIBUTES,
       });
       doc.addEventListener('load', onLoad, true);
       schedule(doc);
@@ -173,6 +258,7 @@ export function createClassifier(doc: Document, measure: Measure = measureRender
       if (frame !== null) cancelAnimationFrame(frame);
       frame = null;
       pending.clear();
+      pendingIcons.clear();
     },
   };
 }
