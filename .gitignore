@@ -29,3 +29,8 @@ web-ext.config.ts
 # Test output
 playwright-report
 test-results
+
+# Secrets: never commit env files (API keys live only in Vercel)
+.env
+.env.*
+!.env.example
