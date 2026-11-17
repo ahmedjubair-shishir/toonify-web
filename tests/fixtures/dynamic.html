@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fixture: dynamic single-page app</title>
+  </head>
+  <body>
+    <nav><button id="navigate" type="button">Next page</button></nav>
+    <main id="app"></main>
+    <script>
+      // Simulates a single-page app with a "head manager" (like many React or
+      // Vue routers): every route change rewrites <main>, resets the <html>
+      // attributes and replaces the children of <head>.
+      let route = 0;
+
+      function render() {
+        route += 1;
+        history.pushState({ route }, '', `#/page-${route}`);
+
+        for (const name of [...document.documentElement.getAttributeNames()]) {
+          if (name !== 'lang') document.documentElement.removeAttribute(name);
+        }
+        document.head.replaceChildren();
+        const title = document.createElement('title');
+        title.textContent = `Fixture: dynamic page ${route}`;
+        document.head.append(title);
+
+        const app = document.getElementById('app');
+        app.innerHTML = `
+          <h1>Page ${route}</h1>
+          <img class="late-image" alt="Generated picture ${route}" width="120" height="80"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='120' height='80' fill='%23ffd147'/%3E%3C/svg%3E" />
+          <button class="late-button" type="button">Button on page ${route}</button>`;
+      }
+
+      document.getElementById('navigate').addEventListener('click', render);
+      render();
+    </script>
+  </body>
+</html>

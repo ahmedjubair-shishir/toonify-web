@@ -1,0 +1,212 @@
+/*
+ * Popup styles. Token names and values come from the Figma file
+ * (Handoff & Store > Tokens in code). Milestone 1 moves these into
+ * src/core/tokens/tokens.css and adds the full set.
+ */
+:root {
+  --tw-bg-surface: #ffffff;
+  --tw-bg-subtle: #eeeef3;
+  --tw-bg-accent: #6236f5;
+  --tw-bg-accent-hover: #5127d6;
+  --tw-bg-error-subtle: #ffeeee;
+  --tw-text-primary: #18181f;
+  --tw-text-secondary: #5a5a6e;
+  --tw-text-accent: #6236f5;
+  --tw-text-on-accent: #ffffff;
+  --tw-icon-secondary: #5a5a6e;
+  --tw-border-subtle: #eeeef3;
+  --tw-border-strong: #74748a;
+  --tw-border-focus: #7552ff;
+  --tw-radius-md: 10px;
+  --tw-radius-full: 999px;
+  --tw-motion-duration-fast: 120ms;
+  --tw-motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  color-scheme: light dark;
+  font-family:
+    Inter,
+    'Noto Sans Bengali',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tw-bg-surface: #18181f;
+    --tw-bg-subtle: #2b2b38;
+    --tw-bg-accent: #9479ff;
+    --tw-bg-accent-hover: #b8a6ff;
+    --tw-bg-error-subtle: #330f12;
+    --tw-text-primary: #f6f6f9;
+    --tw-text-secondary: #a0a0b0;
+    --tw-text-accent: #b8a6ff;
+    --tw-text-on-accent: #101016;
+    --tw-icon-secondary: #a0a0b0;
+    --tw-border-subtle: #2b2b38;
+    --tw-border-focus: #b8a6ff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --tw-motion-duration-fast: 0ms;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 360px;
+  background: var(--tw-bg-surface);
+  color: var(--tw-text-primary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.popup__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--tw-border-subtle);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+}
+
+.brand__mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--tw-bg-accent);
+}
+
+.brand__name {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.brand__accent {
+  color: var(--tw-text-accent);
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tw-text-secondary);
+}
+
+.popup__body {
+  padding: 16px;
+}
+
+.status {
+  margin: 0;
+  color: var(--tw-text-secondary);
+}
+
+.alert {
+  padding: 12px;
+  border-radius: var(--tw-radius-md);
+}
+
+.alert--error {
+  background: var(--tw-bg-error-subtle);
+}
+
+.alert__title {
+  margin: 0;
+  font-weight: 500;
+}
+
+.alert__body {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--tw-text-secondary);
+}
+
+.popup__footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--tw-border-subtle);
+}
+
+.caption {
+  font-size: 12px;
+  color: var(--tw-text-secondary);
+}
+
+/* Switch (Figma: Components > Switch). Off: small grey thumb with border.
+   On: accent track with a larger thumb, so state is clear without colour. */
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: 1.5px solid var(--tw-border-strong);
+  border-radius: var(--tw-radius-full);
+  background: var(--tw-bg-subtle);
+  cursor: pointer;
+  transition: background-color var(--tw-motion-duration-fast) var(--tw-motion-ease-standard);
+}
+
+.switch__thumb {
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--tw-radius-full);
+  background: var(--tw-icon-secondary);
+  transform: translateY(-50%);
+  transition:
+    transform var(--tw-motion-duration-fast) var(--tw-motion-ease-standard),
+    width var(--tw-motion-duration-fast),
+    height var(--tw-motion-duration-fast);
+}
+
+.switch[aria-checked='true'] {
+  border-color: transparent;
+  background: var(--tw-bg-accent);
+}
+
+.switch[aria-checked='true'] .switch__thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--tw-text-on-accent);
+  transform: translate(15px, -50%);
+}
+
+.switch:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.switch:focus-visible {
+  outline: 2px solid var(--tw-border-focus);
+  outline-offset: 2px;
+}
+
+.switch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,0 +1,7 @@
+.output
+.wxt
+node_modules
+playwright-report
+test-results
+package-lock.json
+TOONIFY_WEB_PROJECT_GUIDE.md

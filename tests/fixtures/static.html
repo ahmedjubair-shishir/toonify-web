@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fixture: static page</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 640px;
+        margin: 40px auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>A plain static page</h1>
+    <p>Used to check that Toonify adds and removes its layer without breaking anything.</p>
+    <img
+      id="photo"
+      alt="A green hill under a blue sky"
+      width="240"
+      height="140"
+      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 140'%3E%3Crect width='240' height='140' fill='%238fd3ff'/%3E%3Cellipse cx='120' cy='150' rx='160' ry='70' fill='%235dbb63'/%3E%3C/svg%3E"
+    />
+    <p>
+      <button id="counter" type="button">Clicked 0 times</button>
+      <label>Name <input id="name" type="text" /></label>
+      <a id="link" href="#section">A link</a>
+    </p>
+    <p id="section">Section target</p>
+    <script>
+      let clicks = 0;
+      document.getElementById('counter').addEventListener('click', (event) => {
+        clicks += 1;
+        event.currentTarget.textContent = `Clicked ${clicks} times`;
+      });
+    </script>
+  </body>
+</html>
