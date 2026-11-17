@@ -6,7 +6,7 @@ import type { SiteKey } from './site';
  * type has a known request and response shape. Incoming messages are treated
  * as untrusted and validated before use.
  */
-export interface MessageMap {
+export interface MessageMap extends HandoffMessages {
   /** Popup -> content script: is the layer actually on this page? */
   'toonify/get-status': {
     request: Record<never, never>;
@@ -27,6 +27,20 @@ export interface MessageMap {
   };
 }
 
+/** Content script -> background helpers for the account handoff. */
+export interface HandoffMessages {
+  /** Open the chosen AI app in a new tab (only known apps, never a page-given URL). */
+  'toonify/open-ai-app': {
+    request: { tool: string };
+    response: { ok: boolean };
+  };
+  /** Download one image the page can't share directly (no CORS). */
+  'toonify/fetch-image': {
+    request: { url: string };
+    response: { ok: true; mimeType: string; base64: string } | { ok: false };
+  };
+}
+
 export type CartoonizeResult =
   { ok: true; mimeType: string; base64: string } | { ok: false; code: string; message: string };
 
@@ -38,6 +52,8 @@ const MESSAGE_TYPES: readonly MessageType[] = [
   'toonify/get-status',
   'toonify/site-allowed',
   'toonify/cartoonize',
+  'toonify/open-ai-app',
+  'toonify/fetch-image',
 ];
 
 export function isMessage(value: unknown): value is Message {

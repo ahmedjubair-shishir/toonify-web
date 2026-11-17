@@ -36,6 +36,7 @@ export async function cartoonize(
   const settings = await getSettings();
   if (site === null || !isSiteActive(settings, site))
     return fail('site-off', 'Toonify is off for this site.');
+  if (settings.aiTool !== 'toonify') return fail('tool', 'Toonify AI isn’t the selected AI tool.');
   if (!settings.aiConsent) return fail('consent', 'Please allow AI cartoonizing first.');
 
   const { imageUrl, width, height } = message;

@@ -1,7 +1,10 @@
-import { defineContentScript } from '#imports';
+import { browser, defineContentScript } from '#imports';
+import { buildEffectsCss } from '@/content/effects-css';
+import { applyScheme } from '@/content/page-scheme';
+import { resolveEffects } from '@/core/effects';
 import { createCartoonizeUi, type CartoonizeUi } from '@/content/cartoonize-ui';
 import { createClassifier } from '@/content/classify';
-import { isCartoonizeAvailable } from '@/core/config';
+import { getAiTool, stylePrompt } from '@/core/ai-tools';
 import { buildThemeCss } from '@/content/theme-css';
 import {
   applyLayer,
@@ -42,29 +45,46 @@ export default defineContentScript({
     const site = siteKeyFromUrl(location.href);
     if (site === null) return;
 
+    // Bundled fonts for "Playful headings" (web-accessible, see wxt.config.ts).
+    const fonts = {
+      latin: browser.runtime.getURL('/fonts/fredoka-latin.woff2'),
+      latinExt: browser.runtime.getURL('/fonts/fredoka-latin-ext.woff2'),
+    };
     const contentFor = (settings: Settings): LayerContent => {
       const theme = getTheme(settings.sites[site]?.theme);
-      return { css: buildThemeCss(theme), filter: theme.cartoon };
+      const effects = resolveEffects(settings.sites[site]?.effects);
+      return {
+        css: buildThemeCss(theme) + buildEffectsCss(theme, effects, fonts),
+        filters: { cartoon: theme.cartoon, sketch: effects.sketch },
+      };
     };
     const initial = await getSettings();
     let active = isSiteActive(initial, site);
     let content = contentFor(initial);
+    // AI tool and style instruction, kept current for the Cartoonize chip.
+    let aiTool = getAiTool(initial.aiTool);
+    let themeId = getTheme(initial.sites[site]?.theme).id;
     const guard = createLayerGuard(
       document,
       () => active,
       () => content,
     );
     const classifier = createClassifier(document);
-    // AI Cartoonize chip: only when the build has a server and the site is on.
+    // AI Cartoonize chip: only when the site is on and an AI tool is picked.
     let cartoonizeUi: CartoonizeUi | null = null;
     const startCartoonize = () => {
-      if (cartoonizeUi !== null || !isCartoonizeAvailable()) return;
+      if (cartoonizeUi !== null || aiTool.kind === 'off') return;
       cartoonizeUi = createCartoonizeUi(document, {
+        currentTool: () => aiTool,
+        stylePrompt: () => stylePrompt(themeId),
         hasConsent: async () => (await getSettings()).aiConsent,
         giveConsent: async () => {
           await setAiConsent(true);
         },
         requestCartoon: (image) => sendToBackground({ type: 'toonify/cartoonize', ...image }),
+        openAiApp: async (tool) =>
+          (await sendToBackground({ type: 'toonify/open-ai-app', tool })).ok,
+        fetchImage: (url) => sendToBackground({ type: 'toonify/fetch-image', url }),
       });
     };
     const stopCartoonize = () => {
@@ -75,9 +95,11 @@ export default defineContentScript({
     const sync = () => {
       if (active) {
         applyLayer(document, content);
+        applyScheme(document);
         guard.start();
         classifier.start();
-        startCartoonize();
+        if (aiTool.kind === 'off') stopCartoonize();
+        else startCartoonize();
       } else {
         stopCartoonize();
         classifier.stop();
@@ -86,6 +108,12 @@ export default defineContentScript({
       }
     };
     sync();
+    // The page's own colours are known only once it has loaded: re-check then.
+    const recheckScheme = () => {
+      if (active) applyScheme(document);
+    };
+    document.addEventListener('DOMContentLoaded', recheckScheme, { once: true });
+    window.addEventListener('load', recheckScheme, { once: true });
 
     // Popup switches (global or this site) update every tab on this site.
     // Other sites' settings changing does not affect this page.
@@ -93,9 +121,12 @@ export default defineContentScript({
     const unwatch = watchSettings((settings) => {
       const next = isSiteActive(settings, site);
       const nextContent = contentFor(settings);
-      if (next === active && nextContent.css === content.css) return;
+      const nextTool = getAiTool(settings.aiTool);
+      themeId = getTheme(settings.sites[site]?.theme).id;
+      if (next === active && nextContent.css === content.css && nextTool.id === aiTool.id) return;
       active = next;
       content = nextContent;
+      aiTool = nextTool;
       sync();
     });
 

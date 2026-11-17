@@ -25,6 +25,11 @@ test.describe('AI Cartoonize (fake server)', () => {
     worker,
     extensionId,
   }) => {
+    await worker.evaluate(async () => {
+      await chrome.storage.local.set({
+        settings: { globalEnabled: true, sites: {}, aiConsent: false, aiTool: 'toonify' },
+      });
+    });
     const { page, tabId } = await openTab(context, worker, PAGE);
     const popup = await openPopup(context, extensionId, tabId);
     await siteSwitch(popup, 'localhost').click();
@@ -97,7 +102,7 @@ test.describe('AI Cartoonize (fake server)', () => {
   }) => {
     await worker.evaluate(async () => {
       await chrome.storage.local.set({
-        settings: { globalEnabled: true, sites: {}, aiConsent: true },
+        settings: { globalEnabled: true, sites: {}, aiConsent: true, aiTool: 'toonify' },
       });
     });
     await fetch(`${FAKE}/__fail`);
@@ -120,7 +125,7 @@ test.describe('AI Cartoonize (fake server)', () => {
   }) => {
     await worker.evaluate(async () => {
       await chrome.storage.local.set({
-        settings: { globalEnabled: true, sites: {}, aiConsent: true },
+        settings: { globalEnabled: true, sites: {}, aiConsent: true, aiTool: 'toonify' },
       });
     });
     const { page, tabId } = await openTab(context, worker, PAGE);
@@ -136,5 +141,116 @@ test.describe('AI Cartoonize (fake server)', () => {
     await page.waitForTimeout(500);
     expect(await sentRequests()).toHaveLength(0);
     await expect(photo(page)).toHaveAttribute('src', ORIGINAL);
+  });
+
+  test('Gemini account: picked in the popup, copies picture + instruction and opens Gemini', async ({
+    context,
+    worker,
+    extensionId,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
+      origin: 'http://localhost:4173',
+    });
+    // Stand-in for gemini.google.com (no real Google in tests).
+    await context.route('https://gemini.google.com/**', (route) =>
+      route.fulfill({ contentType: 'text/html', body: '<h1>Gemini stand-in</h1>' }),
+    );
+    const { page, tabId } = await openTab(context, worker, PAGE);
+    const popup = await openPopup(context, extensionId, tabId);
+    await siteSwitch(popup, 'localhost').click();
+
+    // The popup lists every tool with what it needs; API keys are not ready yet.
+    const ai = popup.getByRole('group', { name: 'AI cartoonize' });
+    await expect(ai.getByRole('radio', { name: /Off/ })).toBeChecked();
+    await expect(ai.getByText('Free or Pro account · you paste')).toBeVisible();
+    await expect(ai.getByRole('radio', { name: /Gemini - API key/ })).toBeDisabled();
+    await ai.getByRole('radio', { name: /Gemini - my account/ }).check();
+    await expect
+      .poll(() =>
+        worker.evaluate(
+          async () =>
+            (
+              (await chrome.storage.local.get('settings')).settings as
+                { aiTool?: string } | undefined
+            )?.aiTool,
+        ),
+      )
+      .toBe('gemini-account');
+
+    // Same-origin picture (data: URL here): copied as PNG with the instruction.
+    await page.bringToFront();
+    await expect.poll(() => page.locator('#photo').getAttribute('data-toonify')).toBe('media');
+    await page.locator('#photo').hover();
+    await expect(chip(page)).toHaveText('Cartoonize in Gemini');
+    // The new tab asks for Gemini (the stand-in page may not render in it).
+    const geminiRequest = context.waitForEvent('request', (r) =>
+      r.url().startsWith('https://gemini.google.com/app'),
+    );
+    await chip(page).click();
+    expect((await geminiRequest).url()).toBe('https://gemini.google.com/app');
+
+    await page.bringToFront();
+    const hint = page.locator('toonify-web-ui').locator('.hint');
+    await expect(hint).toContainText('Gemini opened in a new tab');
+    await expect(hint).toContainText('picture and the style instruction are copied');
+    const clipboard = await page.evaluate(async () => {
+      const [item] = await navigator.clipboard.read();
+      return {
+        types: item?.types ?? [],
+        text: item ? await (await item.getType('text/plain')).text() : '',
+      };
+    });
+    expect(clipboard.types).toEqual(expect.arrayContaining(['image/png', 'text/plain']));
+    expect(clipboard.text).toContain('classic cartoon illustration');
+
+    // Nothing was sent to any server, and the photo is unchanged.
+    expect(await sentRequests()).toHaveLength(0);
+    await expect(page.locator('#photo')).not.toHaveAttribute('data-toonify-cartoon', '');
+  });
+
+  test('ChatGPT account: if a site blocks copying the picture, explains the manual way', async ({
+    context,
+    worker,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
+      origin: 'http://localhost:4173',
+    });
+    await context.route('https://chatgpt.com/**', (route) =>
+      route.fulfill({ contentType: 'text/html', body: '<h1>ChatGPT stand-in</h1>' }),
+    );
+    await worker.evaluate(async () => {
+      await chrome.storage.local.set({
+        settings: {
+          globalEnabled: true,
+          sites: { localhost: { enabled: true, theme: 'comic-book' } },
+          aiConsent: false,
+          aiTool: 'chatgpt-account',
+        },
+      });
+    });
+    const { page } = await openTab(context, worker, PAGE);
+    await expect.poll(() => photo(page).getAttribute('data-toonify')).toBe('media');
+    await page.bringToFront();
+
+    // An SVG from another site without CORS: the picture can't be copied.
+    await photo(page).hover();
+    await expect(chip(page)).toHaveText('Cartoonize in ChatGPT');
+    const chatRequest = context.waitForEvent('request', (r) =>
+      r.url().startsWith('https://chatgpt.com/'),
+    );
+    await chip(page).click();
+    expect((await chatRequest).url()).toBe('https://chatgpt.com/');
+    await page.bringToFront();
+    const hint = page.locator('toonify-web-ui').locator('.hint');
+    await expect(hint).toContainText('doesn’t let Toonify copy the picture');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('comic book panel');
+
+    // "Copy instruction" copies it again; "Done" closes the hint.
+    await page.evaluate(() => navigator.clipboard.writeText('something else'));
+    await hint.getByRole('button', { name: 'Copy instruction' }).click();
+    await expect(hint.getByRole('button', { name: 'Copied' })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('comic book panel');
+    await hint.getByRole('button', { name: 'Done' }).click();
+    await expect(hint).toBeHidden();
   });
 });

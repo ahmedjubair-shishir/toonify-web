@@ -9,11 +9,14 @@ import {
   getSettings,
   isSiteActive,
   setGlobalEnabled,
+  setAiTool,
+  setSiteEffect,
   setSiteEnabled,
   setSiteTheme,
   watchSettings,
   type Settings,
 } from '@/core/settings';
+import type { EffectId } from '@/core/effects';
 import { siteKeyFromUrl, type SiteKey } from '@/core/site';
 
 /** Which popup screen to show (Figma: Popup page, frames 01 to 10). */
@@ -123,6 +126,10 @@ export function usePopupState() {
     setGlobalEnabled: (enabled: boolean) => void setGlobalEnabled(enabled),
     setSiteEnabled: (enabled: boolean) => {
       if (site) void setSiteEnabled(site, enabled);
+    },
+    setAiTool: (tool: string) => void setAiTool(tool),
+    setSiteEffect: (effect: EffectId, on: boolean) => {
+      if (site) void setSiteEffect(site, effect, on);
     },
     setSiteTheme: (theme: string) => {
       if (site) void setSiteTheme(site, theme);

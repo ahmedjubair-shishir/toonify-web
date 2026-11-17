@@ -51,6 +51,9 @@ export interface ThemeTokens {
   mediaShadow: InkShadow | null;
   /** Image redraw recipe, or null to keep the picture itself unchanged. */
   cartoon: CartoonFilter | null;
+  /** Background pattern for the "Comic background" effect. */
+  texture: 'grid' | 'halftone' | 'paper';
   /** Colour treatment for content images, after the redraw (1 / 0 = unchanged). */
+
   media: { saturate: number; contrast: number; sepia: number };
 }

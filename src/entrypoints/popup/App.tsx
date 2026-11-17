@@ -1,5 +1,7 @@
 import { Check, Lock, Pause, Power, RotateCcw, RotateCw, TriangleAlert, Ban } from 'lucide-react';
 import { useState } from 'react';
+import { availableAiTools, getAiTool, isAiFeatureEnabled } from '@/core/ai-tools';
+import { EFFECTS, resolveEffects } from '@/core/effects';
 import { THEMES, getTheme } from '@/core/themes';
 import { Lockup } from './components/BrandMark';
 import { Button } from './components/Button';
@@ -8,6 +10,8 @@ import { EmptyState } from './components/EmptyState';
 import { PowerButton } from './components/PowerButton';
 import { SiteRow } from './components/SiteRow';
 import { SiteToggle } from './components/SiteToggle';
+import { AiToolPicker } from './components/AiToolPicker';
+import { EffectsList } from './components/EffectsList';
 import { ThemePicker } from './components/ThemePicker';
 import { Toast } from './components/Toast';
 import { usePopupState } from './usePopupState';
@@ -119,6 +123,18 @@ export function App() {
               value={getTheme(settings.sites[site]?.theme).id}
               onChange={actions.setSiteTheme}
             />
+            <EffectsList
+              effects={EFFECTS}
+              value={resolveEffects(settings.sites[site]?.effects)}
+              onChange={actions.setSiteEffect}
+            />
+            {isAiFeatureEnabled() && (
+              <AiToolPicker
+                tools={availableAiTools()}
+                value={getAiTool(settings.aiTool).id}
+                onChange={actions.setAiTool}
+              />
+            )}
             {view.applied === false && (
               <div className="alert alert--warning" role="note">
                 <TriangleAlert

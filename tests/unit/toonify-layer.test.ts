@@ -12,7 +12,7 @@ import { buildThemeCss } from '@/content/theme-css';
 import { classicCartoon } from '@/core/themes/classic-cartoon';
 
 const CSS = buildThemeCss(classicCartoon);
-const CONTENT = { css: CSS, filter: classicCartoon.cartoon };
+const CONTENT = { css: CSS, filters: { cartoon: classicCartoon.cartoon, sketch: false } };
 
 const styleCount = () => document.querySelectorAll(`#${STYLE_ELEMENT_ID}`).length;
 // MutationObserver callbacks and our queued repair run as microtasks.
@@ -75,7 +75,7 @@ describe('applyLayer / removeLayer', () => {
 
   it('swaps the CSS in place when the theme changes', () => {
     applyLayer(document, CONTENT);
-    applyLayer(document, { css: '/* other theme */', filter: null });
+    applyLayer(document, { css: '/* other theme */', filters: { cartoon: null, sketch: false } });
     expect(styleCount()).toBe(1);
     expect(document.getElementById(STYLE_ELEMENT_ID)?.textContent).toBe('/* other theme */');
   });

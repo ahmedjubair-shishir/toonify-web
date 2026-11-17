@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { bytesToBase64, cartoonize } from '@/background/cartoonize';
 import { getInstallId } from '@/core/install-id';
-import { setAiConsent, setSiteEnabled, setSiteTheme } from '@/core/settings';
+import { setAiConsent, setAiTool, setSiteEnabled, setSiteTheme } from '@/core/settings';
 import type { SiteKey } from '@/core/site';
 
 const URL_ = 'https://toonify.example/api/cartoonize';
@@ -23,7 +23,9 @@ const okFetch = () =>
     mock: { calls: [string, RequestInit][] };
   };
 
-beforeEach(() => fakeBrowser.reset());
+beforeEach(async () => {
+  fakeBrowser.reset();
+});
 
 describe('background cartoonize', () => {
   it('refuses when no server is configured, the site is off, or there is no consent', async () => {
@@ -39,6 +41,11 @@ describe('background cartoonize', () => {
     await setSiteEnabled(site, true);
     expect(await cartoonize(message, sender, { fetchImpl, url: URL_ })).toMatchObject({
       ok: false,
+      code: 'tool',
+    });
+    await setAiTool('toonify');
+    expect(await cartoonize(message, sender, { fetchImpl, url: URL_ })).toMatchObject({
+      ok: false,
       code: 'consent',
     });
     expect(await cartoonize(message, {}, { fetchImpl, url: URL_ })).toMatchObject({
@@ -51,6 +58,7 @@ describe('background cartoonize', () => {
   it('refuses non-web image addresses', async () => {
     await setSiteEnabled(site, true);
     await setAiConsent(true);
+    await setAiTool('toonify');
     const fetchImpl = okFetch();
     for (const imageUrl of [
       'data:image/png;base64,AAA',
@@ -68,6 +76,7 @@ describe('background cartoonize', () => {
     await setSiteEnabled(site, true);
     await setSiteTheme(site, 'storybook');
     await setAiConsent(true);
+    await setAiTool('toonify');
     const fetchImpl = okFetch();
     const result = await cartoonize(message, sender, { fetchImpl, url: URL_ });
     expect(result).toEqual({ ok: true, mimeType: 'image/jpeg', base64: 'AQID' });
@@ -88,6 +97,7 @@ describe('background cartoonize', () => {
   it('passes on the server’s safe error message and code', async () => {
     await setSiteEnabled(site, true);
     await setAiConsent(true);
+    await setAiTool('toonify');
     const fetchImpl = (async () =>
       Response.json(
         { error: { code: 'user-limit', message: 'Try again in an hour.' } },

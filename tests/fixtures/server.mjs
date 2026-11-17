@@ -16,6 +16,16 @@ const types = {
 
 createServer(async (req, res) => {
   const path = normalize(new URL(req.url ?? '/', 'http://x').pathname).replace(/^(\.\.[/\\])+/, '');
+  // Same theme page, but with a strict Content Security Policy like many real sites.
+  if (path === '/csp-theme.html') {
+    const body = await readFile(join(root, 'theme.html'));
+    res.writeHead(200, {
+      'content-type': 'text/html; charset=utf-8',
+      'content-security-policy':
+        "default-src 'self'; img-src 'self' data: http://127.0.0.1:4173; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'unsafe-inline'",
+    });
+    return res.end(body);
+  }
   try {
     const body = await readFile(join(root, path === '/' ? 'static.html' : path));
     res.writeHead(200, { 'content-type': types[extname(path)] ?? 'application/octet-stream' });

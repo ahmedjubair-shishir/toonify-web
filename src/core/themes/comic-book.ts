@@ -10,6 +10,10 @@ export const comicBook: ThemeTokens = {
   radius: { media: 4, button: 6, field: 4 },
   buttonShadow: { x: 3, y: 3, blur: 0 },
   mediaShadow: { x: 6, y: 6, blur: 0 },
-  cartoon: { smooth: 1.2, levels: 5, flatten: 0.65, edge: 11, threshold: 0.045, edgeWidth: 0.6 },
+  // Filter redraw is off (owner feedback: not nice enough); the real redraw
+  // will be the on-click AI "Cartoonize". Recipe kept for an optional effect:
+  // { smooth: 1.2, levels: 5, flatten: 0.65, edge: 11, threshold: 0.045, edgeWidth: 0.6 }
+  cartoon: null,
+  texture: 'halftone',
   media: { saturate: 1.3, contrast: 1.12, sepia: 0 },
 };

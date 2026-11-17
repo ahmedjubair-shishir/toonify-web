@@ -1,3 +1,4 @@
+import type { AiTool } from '@/core/ai-tools';
 import type { CartoonizeResult } from '@/core/messaging';
 import { MARK } from './classify';
 
@@ -15,6 +16,10 @@ export const UI_HOST_TAG = 'toonify-web-ui';
 export const CARTOON_ATTRIBUTE = 'data-toonify-cartoon';
 
 export interface CartoonizeDeps {
+  /** The AI tool picked in the popup (kept current by the content script). */
+  currentTool: () => AiTool;
+  /** Style instruction for this site's chosen style. */
+  stylePrompt: () => string;
   hasConsent: () => Promise<boolean>;
   giveConsent: () => Promise<void>;
   requestCartoon: (image: {
@@ -22,6 +27,46 @@ export interface CartoonizeDeps {
     width: number;
     height: number;
   }) => Promise<CartoonizeResult>;
+  /** Account handoff: open the AI app in a new tab. */
+  openAiApp: (toolId: string) => Promise<boolean>;
+  /** Account handoff: get image bytes the page won't share (no CORS). */
+  fetchImage: (
+    url: string,
+  ) => Promise<{ ok: true; mimeType: string; base64: string } | { ok: false }>;
+}
+
+const MAX_COPY_SIDE = 2048;
+
+const base64ToBlob = (base64: string, type: string) =>
+  new Blob([Uint8Array.from(atob(base64), (char) => char.charCodeAt(0))], { type });
+
+/**
+ * PNG copy of a page image (the clipboard only takes PNG). Tries a CORS
+ * reload first; if the image's server doesn't allow that, asks the
+ * background to download it. Large images are scaled down.
+ */
+async function imageToPng(image: HTMLImageElement, deps: CartoonizeDeps): Promise<Blob> {
+  const src = image.currentSrc || image.src;
+  let source: ImageBitmap;
+  try {
+    const probe = new Image();
+    probe.crossOrigin = 'anonymous';
+    probe.src = src;
+    await probe.decode();
+    source = await createImageBitmap(probe);
+  } catch {
+    const fetched = await deps.fetchImage(src);
+    if (!fetched.ok) throw new Error('image not readable');
+    source = await createImageBitmap(base64ToBlob(fetched.base64, fetched.mimeType));
+  }
+  const scale = Math.min(1, MAX_COPY_SIDE / Math.max(source.width, source.height));
+  const canvas = new OffscreenCanvas(
+    Math.max(1, Math.round(source.width * scale)),
+    Math.max(1, Math.round(source.height * scale)),
+  );
+  canvas.getContext('2d')?.drawImage(source, 0, 0, canvas.width, canvas.height);
+  source.close();
+  return canvas.convertToBlob({ type: 'image/png' });
 }
 
 interface Swap {
@@ -85,6 +130,20 @@ const CSS = `
 .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+
+.hint {
+  position: fixed; z-index: 2147483647; display: none; width: 300px; padding: 14px 16px; border-radius: 14px;
+  font: 400 13px/1.45 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1b1b2f; background: #ffffff; box-shadow: 0 8px 28px rgba(20, 16, 40, 0.28);
+}
+.hint[data-visible="true"] { display: block; }
+.hint strong { display: block; margin-bottom: 4px; font-size: 14px; font-weight: 600; }
+.hint p { margin: 0 0 10px; color: #4a4860; }
+.hint .row { display: flex; gap: 8px; justify-content: flex-end; }
+.hint button { height: 32px; padding: 0 12px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.hint .secondary { border: 1px solid #d6d4e0; color: #1b1b2f; background: #ffffff; }
+.hint .primary { border: 0; color: #ffffff; background: #6236f5; }
+.hint button:focus-visible { outline: 2px solid #6236f5; outline-offset: 2px; }
 
 dialog {
   width: min(400px, calc(100vw - 32px)); padding: 24px; border: 0; border-radius: 16px;
@@ -158,7 +217,28 @@ export function createCartoonizeUi(doc: Document, deps: CartoonizeDeps): Cartoon
   });
   actions.append(cancel, allow);
   dialog.append(list, actions);
-  root.append(style, chip, live, dialog);
+  // Handoff hint: what to do in the AI app, plus a way to copy the instruction again.
+  const hint = doc.createElement('div');
+  hint.className = 'hint';
+  hint.setAttribute('role', 'dialog');
+  hint.setAttribute('aria-label', 'Next step');
+  const hintTitle = doc.createElement('strong');
+  const hintBody = doc.createElement('p');
+  const hintRow = doc.createElement('div');
+  hintRow.className = 'row';
+  const copyAgain = Object.assign(doc.createElement('button'), {
+    type: 'button',
+    className: 'secondary',
+    textContent: 'Copy instruction',
+  });
+  const hintDone = Object.assign(doc.createElement('button'), {
+    type: 'button',
+    className: 'primary',
+    textContent: 'Done',
+  });
+  hintRow.append(copyAgain, hintDone);
+  hint.append(hintTitle, hintBody, hintRow);
+  root.append(style, chip, live, dialog, hint);
   doc.documentElement.append(host);
 
   const swaps = new Map<HTMLImageElement, Swap>();
@@ -200,7 +280,9 @@ export function createCartoonizeUi(doc: Document, deps: CartoonizeDeps): Cartoon
     } else if (state === 'error') {
       chip.textContent = errorText;
     } else {
-      chip.replaceChildren(icon(doc, ICONS.sparkles), doc.createTextNode('Cartoonize'));
+      const tool = deps.currentTool();
+      const label = tool.kind === 'account' ? `Cartoonize in ${tool.name}` : 'Cartoonize';
+      chip.replaceChildren(icon(doc, ICONS.sparkles), doc.createTextNode(label));
     }
     const rect = target.getBoundingClientRect();
     const width = chip.offsetWidth || 120;
@@ -340,6 +422,55 @@ export function createCartoonizeUi(doc: Document, deps: CartoonizeDeps): Cartoon
     render();
   };
 
+  const showHint = (tool: AiTool, copiedImage: boolean, opened: boolean) => {
+    hintTitle.textContent = opened
+      ? `${tool.name} opened in a new tab`
+      : `Open ${tool.name} to continue`;
+    hintBody.textContent = copiedImage
+      ? `The picture and the style instruction are copied. In ${tool.name}, paste with Ctrl+V (Cmd+V on Mac) and send. If only the picture appears, come back here and copy the instruction.`
+      : `This site doesn’t let Toonify copy the picture. Right-click it, choose “Copy image” and paste it in ${tool.name}, then copy the instruction here and paste it too.`;
+    const rect = chip.getBoundingClientRect();
+    hint.style.top = `${Math.max(8, Math.min(rect.bottom + 8, doc.documentElement.clientHeight - 200))}px`;
+    hint.style.left = `${Math.max(8, Math.min(rect.right - 300, doc.documentElement.clientWidth - 308))}px`;
+    hint.dataset.visible = 'true';
+    announce(hintTitle.textContent);
+  };
+  copyAgain.addEventListener('click', () => {
+    void navigator.clipboard.writeText(deps.stylePrompt()).then(
+      () => {
+        copyAgain.textContent = 'Copied';
+        setTimeout(() => (copyAgain.textContent = 'Copy instruction'), 2000);
+      },
+      () => announce('Couldn’t copy. Please try again.'),
+    );
+  });
+  hintDone.addEventListener('click', () => {
+    hint.dataset.visible = 'false';
+  });
+
+  /**
+   * Account handoff (Gemini / ChatGPT app). The clipboard write starts
+   * synchronously inside the click, as browsers require; the PNG is filled
+   * in as a promise. Then the AI app opens in a new tab.
+   */
+  const handoff = (image: HTMLImageElement, tool: AiTool) => {
+    const prompt = deps.stylePrompt();
+    const text = new Blob([prompt], { type: 'text/plain' });
+    const write = navigator.clipboard
+      .write([new ClipboardItem({ 'image/png': imageToPng(image, deps), 'text/plain': text })])
+      .then(
+        () => true,
+        async () => {
+          await navigator.clipboard.writeText(prompt).catch(() => undefined);
+          return false;
+        },
+      );
+    void write.then(async (copiedImage) => {
+      const opened = await deps.openAiApp(tool.id).catch(() => false);
+      showHint(tool, copiedImage, opened);
+    });
+  };
+
   chip.addEventListener('click', (event) => {
     if (!event.isTrusted) return; // only a real user click can send an image
     const image = target;
@@ -353,6 +484,11 @@ export function createCartoonizeUi(doc: Document, deps: CartoonizeDeps): Cartoon
     if (errorText) {
       errorText = '';
       render();
+      return;
+    }
+    const tool = deps.currentTool();
+    if (tool.kind === 'account') {
+      handoff(image, tool);
       return;
     }
     void cartoonize(image);

@@ -1,6 +1,7 @@
 import { browser, defineBackground } from '#imports';
 import { cartoonize } from '@/background/cartoonize';
 import { injectIntoOpenTabs, syncContentScripts } from '@/background/content-registration';
+import { fetchImage, openAiApp } from '@/background/handoff';
 import { onMessages } from '@/core/messaging';
 import { removeLegacyKeys, setSiteEnabled, updateSettings, withoutSites } from '@/core/settings';
 import { originsForSite, siteKeyFromOrigin, type SiteKey } from '@/core/site';
@@ -46,5 +47,8 @@ export default defineBackground(() => {
     },
     // Content script asks to redraw one image (all checks happen inside).
     'toonify/cartoonize': (message, sender) => cartoonize(message, sender),
+    // Account handoff (Gemini / ChatGPT app): open the app, fetch an image.
+    'toonify/open-ai-app': (message, sender) => openAiApp(message, sender),
+    'toonify/fetch-image': (message, sender) => fetchImage(message, sender),
   });
 });

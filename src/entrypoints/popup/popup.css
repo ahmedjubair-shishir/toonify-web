@@ -622,3 +622,57 @@ p {
   text-transform: uppercase;
   color: var(--tw-text-secondary);
 }
+
+.picker__hint {
+  margin: -2px 0 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--tw-text-secondary);
+}
+
+.picker__option--disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.picker__option--disabled:hover {
+  background: var(--tw-bg-surface);
+}
+
+/* Effects (Figma: Popup > Quick effects / Setting Row). */
+.effects__list {
+  display: flex;
+  flex-direction: column;
+  margin: var(--tw-space-xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.effects__row {
+  display: flex;
+  align-items: center;
+  gap: var(--tw-space-md);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--tw-border-subtle);
+}
+
+.effects__row:last-child {
+  border-bottom: 0;
+}
+
+.effects__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.effects__name {
+  font-weight: 500;
+}
+
+.effects__description {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--tw-text-secondary);
+}

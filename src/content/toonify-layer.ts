@@ -1,30 +1,31 @@
-import type { CartoonFilter } from '@/core/themes';
 import { clearMarks } from './classify';
 import {
-  CARTOON_FILTER_ID,
   FILTER_ELEMENT_ID,
   createFilterElement,
   filterKey,
+  hasFilters,
+  type FilterSet,
 } from './image-filter';
 
 /**
- * The Toonify "layer": everything we add to a web page lives behind ONE
- * attribute on <html>, ONE <style> element, ONE hidden <svg> with the image
- * filter (when the style redraws images) and the classifier's per-element
- * marks, so turning Toonify off is always a clean, complete removal.
- * The CSS itself comes from the theme engine (theme-css.ts).
+ * The Toonify "layer": everything we add to a web page lives behind
+ * attributes on <html> (active + light/dark scheme), ONE <style> element,
+ * ONE hidden <svg> with filters (when a style or effect needs them) and the
+ * classifier's per-element marks, so turning Toonify off is always a clean,
+ * complete removal. The CSS itself comes from the theme engine.
  */
 
 export const ACTIVE_ATTRIBUTE = 'data-toonify-active';
+export const SCHEME_ATTRIBUTE = 'data-toonify-scheme';
 export const STYLE_ELEMENT_ID = 'toonify-web-style';
 
-/** What a theme puts on the page. */
+/** What a theme (plus effects) puts on the page. */
 export interface LayerContent {
   css: string;
-  filter: CartoonFilter | null;
+  filters: FilterSet;
 }
 
-const needsFilter = (css: string | null) => (css ?? '').includes(`#${CARTOON_FILTER_ID}`);
+const needsFilter = (css: string | null) => (css ?? '').includes('url(#toonify-web-');
 
 export function isLayerApplied(doc: Document): boolean {
   const style = doc.getElementById(STYLE_ELEMENT_ID);
@@ -39,17 +40,17 @@ export function isLayerApplied(doc: Document): boolean {
  * Adds the layer with the given theme CSS. Safe to call repeatedly: never
  * creates a second <style>, and swaps the CSS in place when the theme changes.
  */
-export function applyLayer(doc: Document, { css, filter }: LayerContent): void {
+export function applyLayer(doc: Document, { css, filters }: LayerContent): void {
   doc.documentElement.setAttribute(ACTIVE_ATTRIBUTE, '');
 
   // Image filter first, so the CSS never points at a missing filter.
   const svg = doc.getElementById(FILTER_ELEMENT_ID);
-  if (filter === null) {
+  if (!hasFilters(filters)) {
     svg?.remove();
-  } else if (svg?.getAttribute('data-key') !== filterKey(filter)) {
+  } else if (svg?.getAttribute('data-key') !== filterKey(filters)) {
     svg?.remove();
     // Child of <html>, not <body>: apps that replace <body> keep it.
-    doc.documentElement.append(createFilterElement(doc, filter));
+    doc.documentElement.append(createFilterElement(doc, filters));
   }
 
   const existing = doc.getElementById(STYLE_ELEMENT_ID);
@@ -67,6 +68,7 @@ export function applyLayer(doc: Document, { css, filter }: LayerContent): void {
 /** Removes every trace of the layer. Safe to call when nothing is applied. */
 export function removeLayer(doc: Document): void {
   doc.documentElement.removeAttribute(ACTIVE_ATTRIBUTE);
+  doc.documentElement.removeAttribute(SCHEME_ATTRIBUTE);
   doc
     .querySelectorAll(`#${STYLE_ELEMENT_ID}, #${FILTER_ELEMENT_ID}`)
     .forEach((node) => node.remove());

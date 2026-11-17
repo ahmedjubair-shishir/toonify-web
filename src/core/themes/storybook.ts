@@ -10,6 +10,10 @@ export const storybook: ThemeTokens = {
   radius: { media: 22, button: 18, field: 14 },
   buttonShadow: { x: 0, y: 4, blur: 10 },
   mediaShadow: { x: 0, y: 8, blur: 20 },
-  cartoon: { smooth: 1.6, levels: 9, flatten: 0.45, edge: 3.5, threshold: 0.06, edgeWidth: 0 },
+  // Filter redraw is off (owner feedback: not nice enough); the real redraw
+  // will be the on-click AI "Cartoonize". Recipe kept for an optional effect:
+  // { smooth: 1.6, levels: 9, flatten: 0.45, edge: 3.5, threshold: 0.06, edgeWidth: 0 }
+  cartoon: null,
+  texture: 'paper',
   media: { saturate: 0.9, contrast: 0.97, sepia: 0.15 },
 };

@@ -10,6 +10,10 @@ export const classicCartoon: ThemeTokens = {
   radius: { media: 16, button: 12, field: 10 },
   buttonShadow: { x: 0, y: 3, blur: 0 },
   mediaShadow: null,
-  cartoon: { smooth: 1, levels: 7, flatten: 0.5, edge: 7, threshold: 0.05, edgeWidth: 0 },
+  // Filter redraw is off (owner feedback: not nice enough); the real redraw
+  // will be the on-click AI "Cartoonize". Recipe kept for an optional effect:
+  // { smooth: 1, levels: 7, flatten: 0.5, edge: 7, threshold: 0.05, edgeWidth: 0 }
+  cartoon: null,
+  texture: 'grid',
   media: { saturate: 1.15, contrast: 1.05, sepia: 0 },
 };

@@ -1,4 +1,6 @@
 import { storage } from '#imports';
+import { DEFAULT_AI_TOOL, isAiToolId } from './ai-tools';
+import { parseEffects, type EffectId } from './effects';
 import type { SiteKey } from './site';
 
 /**
@@ -10,6 +12,8 @@ export interface SiteSettings {
   enabled: boolean;
   /** Chosen style for this site (a theme id). Missing = the default style. */
   theme?: string;
+  /** Effect switches for this site. Missing = all off. */
+  effects?: Partial<Record<EffectId, boolean>>;
 }
 
 /** Theme ids are short kebab-case names; anything else is ignored. */
@@ -25,12 +29,15 @@ export interface Settings {
    * service (spec: explicit consent before any upload). Off until they agree.
    */
   aiConsent: boolean;
+  /** Which AI tool "Cartoonize" uses (see ai-tools.ts). Default: off. */
+  aiTool: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   globalEnabled: true,
   sites: {},
   aiConsent: false,
+  aiTool: DEFAULT_AI_TOOL,
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -55,17 +62,21 @@ export function parseSettings(raw: unknown): Settings {
         isRecord(value) &&
         typeof value.enabled === 'boolean'
       ) {
-        sites[key] =
-          typeof value.theme === 'string' && THEME_ID.test(value.theme)
-            ? { enabled: value.enabled, theme: value.theme }
-            : { enabled: value.enabled };
+        const entry: SiteSettings = { enabled: value.enabled };
+        if (typeof value.theme === 'string' && THEME_ID.test(value.theme))
+          entry.theme = value.theme;
+        const effects = parseEffects(value.effects);
+        if (effects) entry.effects = effects;
+        sites[key] = entry;
       }
     }
   }
 
   const aiConsent = raw.aiConsent === true;
 
-  return { globalEnabled, sites, aiConsent };
+  const aiTool = isAiToolId(raw.aiTool) ? raw.aiTool : DEFAULT_AI_TOOL;
+
+  return { globalEnabled, sites, aiConsent, aiTool };
 }
 
 /** Is Toonify meant to style this site right now? */
@@ -100,6 +111,11 @@ export const setGlobalEnabled = (enabled: boolean) =>
     s.globalEnabled = enabled;
   });
 
+export const setAiTool = (tool: string) =>
+  updateSettings((s) => {
+    s.aiTool = tool;
+  });
+
 export const setAiConsent = (consent: boolean) =>
   updateSettings((s) => {
     s.aiConsent = consent;
@@ -111,10 +127,21 @@ export const setSiteEnabled = (site: SiteKey, enabled: boolean) =>
     s.sites[site] = { ...s.sites[site], enabled };
   });
 
+/** Switches one effect for a site. Does not turn the site on or off. */
+export const setSiteEffect = (site: SiteKey, effect: EffectId, on: boolean) =>
+  updateSettings((s) => {
+    const current = s.sites[site];
+    s.sites[site] = {
+      ...current,
+      enabled: current?.enabled ?? false,
+      effects: { ...current?.effects, [effect]: on },
+    };
+  });
+
 /** Picks the style for a site. Does not turn the site on or off. */
 export const setSiteTheme = (site: SiteKey, theme: string) =>
   updateSettings((s) => {
-    s.sites[site] = { enabled: s.sites[site]?.enabled ?? false, theme };
+    s.sites[site] = { ...s.sites[site], enabled: s.sites[site]?.enabled ?? false, theme };
   });
 
 /** Returns a copy of `sites` without the given keys. */

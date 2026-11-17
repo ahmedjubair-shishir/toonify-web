@@ -7,11 +7,17 @@ import {
 } from '@/content/image-filter';
 import { buildThemeCss } from '@/content/theme-css';
 import { applyLayer, createLayerGuard, isLayerApplied, removeLayer } from '@/content/toonify-layer';
-import { THEMES } from '@/core/themes';
+import { THEMES, type ThemeTokens } from '@/core/themes';
 import { classicCartoon } from '@/core/themes/classic-cartoon';
 import { comicBook } from '@/core/themes/comic-book';
 
-const content = (theme = classicCartoon) => ({ css: buildThemeCss(theme), filter: theme.cartoon });
+// Themes currently ship without the redraw, so tests use a sample recipe.
+const SAMPLE = { smooth: 1, levels: 7, flatten: 0.5, edge: 7, threshold: 0.05, edgeWidth: 0 };
+const withRedraw = (theme: ThemeTokens): ThemeTokens => ({ ...theme, cartoon: SAMPLE });
+const content = (theme = withRedraw(classicCartoon)) => ({
+  css: buildThemeCss(theme),
+  filters: { cartoon: theme.cartoon, sketch: false },
+});
 const filters = () => document.querySelectorAll(`#${FILTER_ELEMENT_ID}`);
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -28,12 +34,15 @@ describe('bands', () => {
 describe('createFilterElement', () => {
   it('builds a hidden svg with one filter: smooth, flatten, ink, combine', () => {
     const svg = createFilterElement(document, {
-      smooth: 0.8,
-      levels: 4,
-      flatten: 0.6,
-      edge: 5,
-      threshold: 0.05,
-      edgeWidth: 0.6,
+      cartoon: {
+        smooth: 0.8,
+        levels: 4,
+        flatten: 0.6,
+        edge: 5,
+        threshold: 0.05,
+        edgeWidth: 0.6,
+      },
+      sketch: false,
     });
     expect(svg.id).toBe(FILTER_ELEMENT_ID);
     expect(svg.getAttribute('aria-hidden')).toBe('true');
@@ -59,12 +68,15 @@ describe('createFilterElement', () => {
 
   it('skips the ink steps when a style has no lines', () => {
     const svg = createFilterElement(document, {
-      smooth: 1,
-      levels: 8,
-      flatten: 0.5,
-      edge: 0,
-      threshold: 0,
-      edgeWidth: 0,
+      cartoon: {
+        smooth: 1,
+        levels: 8,
+        flatten: 0.5,
+        edge: 0,
+        threshold: 0,
+        edgeWidth: 0,
+      },
+      sketch: false,
     });
     const steps = [...(svg.querySelector('filter')?.children ?? [])].map((n) => n.localName);
     expect(steps).toEqual(['feGaussianBlur', 'feComponentTransfer', 'feComposite', 'feComposite']);
@@ -90,12 +102,12 @@ describe('image filter in the layer', () => {
   });
 
   it('is replaced when the style changes, and removed for styles without it', () => {
-    applyLayer(document, content(classicCartoon));
+    applyLayer(document, content(withRedraw(classicCartoon)));
     const first = filters()[0];
-    applyLayer(document, content(comicBook));
+    applyLayer(document, content({ ...withRedraw(comicBook), cartoon: { ...SAMPLE, levels: 4 } }));
     expect(filters()).toHaveLength(1);
     expect(filters()[0]).not.toBe(first);
-    applyLayer(document, { css: '/* no redraw */', filter: null });
+    applyLayer(document, { css: '/* no redraw */', filters: { cartoon: null, sketch: false } });
     expect(filters()).toHaveLength(0);
   });
 

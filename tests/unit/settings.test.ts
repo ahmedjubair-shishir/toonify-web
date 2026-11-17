@@ -40,6 +40,7 @@ describe('parseSettings (untrusted stored data)', () => {
       globalEnabled: false,
       sites: { 'wikipedia.org': { enabled: true } },
       aiConsent: false,
+      aiTool: 'off',
     });
   });
 
@@ -56,6 +57,12 @@ describe('parseSettings (untrusted stored data)', () => {
       'b.com': { enabled: true },
       'c.com': { enabled: false },
     });
+  });
+
+  it('keeps a known AI tool and falls back to off otherwise', () => {
+    expect(parseSettings({ aiTool: 'gemini-account' }).aiTool).toBe('gemini-account');
+    expect(parseSettings({ aiTool: 'evil-tool' }).aiTool).toBe('off');
+    expect(parseSettings({}).aiTool).toBe('off');
   });
 
   it('AI consent is off unless explicitly true', () => {
@@ -77,6 +84,7 @@ describe('isSiteActive', () => {
       globalEnabled: true,
       sites: { [wiki]: { enabled: true } },
       aiConsent: false,
+      aiTool: 'off',
     };
     expect(isSiteActive(settings, wiki)).toBe(true);
     expect(isSiteActive(settings, youtube)).toBe(false); // other sites untouched

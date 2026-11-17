@@ -30,5 +30,7 @@ export default defineConfig({
     action: {
       default_title: 'Toonify Web',
     },
+    // Fonts for the "Playful headings" effect, loaded by pages Toonify styles.
+    web_accessible_resources: [{ resources: ['fonts/*.woff2'], matches: ['<all_urls>'] }],
   }),
 });

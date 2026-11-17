@@ -18,6 +18,16 @@ import type { CartoonFilter } from '@/core/themes';
 
 export const FILTER_ELEMENT_ID = 'toonify-web-filters';
 export const CARTOON_FILTER_ID = 'toonify-web-cartoon';
+export const SKETCH_FILTER_ID = 'toonify-web-sketch';
+
+/** Filters a page needs: the image redraw (paused) and the hand-drawn wobble. */
+export interface FilterSet {
+  cartoon: CartoonFilter | null;
+  sketch: boolean;
+}
+
+export const NO_FILTERS: FilterSet = { cartoon: null, sketch: false };
+export const hasFilters = (filters: FilterSet) => filters.cartoon !== null || filters.sketch;
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -41,11 +51,40 @@ export function bands(levels: number): string {
   return Array.from({ length: n }, (_, i) => +((i + 0.5) / n).toFixed(3)).join(' ');
 }
 
-/** Stable text form of a recipe, to tell whether the filter must change. */
-export const filterKey = (filter: CartoonFilter | null) =>
-  filter === null ? '' : Object.values(filter).join('|');
+/** Stable text form of the filters, to tell whether the element must change. */
+export const filterKey = ({ cartoon, sketch }: FilterSet) =>
+  `${cartoon === null ? '' : Object.values(cartoon).join('|')}/${sketch ? 'sketch' : ''}`;
 
-export function createFilterElement(doc: Document, filter: CartoonFilter): SVGSVGElement {
+/**
+ * Hand-drawn wobble: a soft noise field nudges each pixel by a couple of px,
+ * so straight outlines look drawn by hand. Same noise every time (fixed seed),
+ * so nothing shimmers.
+ */
+function sketchFilterNode(doc: Document): Element {
+  return el(
+    doc,
+    'filter',
+    { id: SKETCH_FILTER_ID, x: '-3%', y: '-3%', width: '106%', height: '106%' },
+    [
+      el(doc, 'feTurbulence', {
+        type: 'fractalNoise',
+        baseFrequency: 0.035,
+        numOctaves: 2,
+        seed: 7,
+        result: 'noise',
+      }),
+      el(doc, 'feDisplacementMap', {
+        in: 'SourceGraphic',
+        in2: 'noise',
+        scale: 3,
+        xChannelSelector: 'R',
+        yChannelSelector: 'G',
+      }),
+    ],
+  );
+}
+
+function cartoonFilterNode(doc: Document, filter: CartoonFilter): Element {
   const funcs = (type: string, attrs: Attributes) =>
     ['feFuncR', 'feFuncG', 'feFuncB'].map((name) => el(doc, name, { type, ...attrs }));
 
@@ -158,6 +197,25 @@ export function createFilterElement(doc: Document, filter: CartoonFilter): SVGSV
     }),
   );
 
+  return el(
+    doc,
+    'filter',
+    {
+      id: CARTOON_FILTER_ID,
+      'color-interpolation-filters': 'sRGB',
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+    },
+    steps,
+  );
+}
+
+export function createFilterElement(doc: Document, filters: FilterSet): SVGSVGElement {
+  const nodes: Element[] = [];
+  if (filters.cartoon !== null) nodes.push(cartoonFilterNode(doc, filters.cartoon));
+  if (filters.sketch) nodes.push(sketchFilterNode(doc));
   const svg = el(
     doc,
     'svg',
@@ -170,25 +228,9 @@ export function createFilterElement(doc: Document, filter: CartoonFilter): SVGSV
       // Takes no space and never catches clicks; not display:none, which can
       // disable the filter in some browsers.
       style: 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none',
-      'data-key': filterKey(filter),
+      'data-key': filterKey(filters),
     },
-    [
-      el(doc, 'defs', {}, [
-        el(
-          doc,
-          'filter',
-          {
-            id: CARTOON_FILTER_ID,
-            'color-interpolation-filters': 'sRGB',
-            x: 0,
-            y: 0,
-            width: 1,
-            height: 1,
-          },
-          steps,
-        ),
-      ]),
-    ],
+    [el(doc, 'defs', {}, nodes)],
   );
   return svg as SVGSVGElement;
 }

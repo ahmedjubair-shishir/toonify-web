@@ -3,11 +3,11 @@
  * targets raw tags like `img` or `button`. Styling is opt-in per element:
  * anything not marked keeps the site's original look.
  *
- * Marks: data-toonify="media" | "button" | "field".
+ * Marks: data-toonify="media" | "button" | "field" | "heading".
  */
 
 export const MARK = 'data-toonify';
-export type MarkKind = 'media' | 'button' | 'field';
+export type MarkKind = 'media' | 'button' | 'field' | 'heading';
 
 /** Smallest image we treat as content, not an icon (px, both sides). */
 export const MIN_MEDIA_SIZE = 48;
@@ -18,7 +18,20 @@ const BUTTON_SELECTOR =
   'button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]';
 const FIELD_SELECTOR =
   'textarea, select, input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="url"], input[type="tel"], input[type="password"], input[type="number"]';
-const CANDIDATE_SELECTOR = `img, ${BUTTON_SELECTOR}, ${FIELD_SELECTOR}`;
+const HEADING_SELECTOR = 'h1, h2, h3, h4';
+const CANDIDATE_SELECTOR = `img, ${BUTTON_SELECTOR}, ${FIELD_SELECTOR}, ${HEADING_SELECTOR}`;
+
+/**
+ * Headings whose letters are mostly Latin. The playful font only covers
+ * Latin, so other scripts (Bengali, Arabic, CJK...) keep the site's font
+ * instead of falling back to a different one.
+ */
+export function isMostlyLatin(text: string): boolean {
+  const letters = text.match(/\p{L}/gu) ?? [];
+  if (letters.length === 0) return false;
+  const latin = letters.filter((letter) => /\p{Script=Latin}/u.test(letter)).length;
+  return latin / letters.length >= 0.8;
+}
 
 /**
  * Areas we never touch: rich editors, app-like widgets (maps, players,
@@ -62,6 +75,10 @@ export function classify(element: Element, measure: Measure = measureRendered): 
     if (element.parentElement?.closest(BUTTON_SELECTOR)) return null;
     const { height } = measure(element);
     return height >= MIN_BUTTON_HEIGHT ? 'button' : null;
+  }
+
+  if (element.matches(HEADING_SELECTOR)) {
+    return isMostlyLatin(element.textContent ?? '') ? 'heading' : null;
   }
 
   if (element.matches(FIELD_SELECTOR)) {
@@ -134,6 +151,8 @@ export function createClassifier(doc: Document, measure: Measure = measureRender
           }
           record.addedNodes.forEach((node) => {
             if (node instanceof Element) schedule(node);
+            // New text (e.g. a heading's words after a route change): re-check its parent.
+            else if (node.parentElement) schedule(node.parentElement);
           });
         }
       });

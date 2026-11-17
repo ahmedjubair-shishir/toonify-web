@@ -75,6 +75,43 @@ Owner chose **Gemini** (cloud, on click). Pulled forward from Milestone 6.
   - **Build config:** `WXT_CARTOONIZE_URL` (`.env.production`; `.env.e2e` points at `tests/fixtures/fake-cartoonize.mjs`).
 - Not yet: keyboard access to the chip (planned: right-click menu "Cartoonize this image"), a revoke-consent control in the popup/settings, Firefox check, a real Gemini run.
 
+## AI tool choice (owner request, 18 Nov 2026)
+
+Owner: the user picks the AI tool, then the style; each tool shows whether it needs an API key or an account. Gemini + ChatGPT first. Built before Figma (owner's choice); Figma to follow.
+
+- Popup **AI cartoonize** list (global setting `aiTool`, default Off):
+  - Off.
+  - **Gemini - my account** / **ChatGPT - my account** ("Free or Pro/Plus account · you paste").
+  - Gemini / OpenAI API key ("coming soon", disabled).
+  - **Toonify AI** (only when the build has a server URL).
+- **Account handoff** (no app may drive a consumer subscription automatically):
+  1. The chip says "Cartoonize in Gemini/ChatGPT".
+  2. On click, the picture (PNG) and the style instruction go to the clipboard in one item. If the image's server blocks reading it, the background downloads it (raster images only, 8 MB cap, active site only).
+  3. The background opens the chosen app (a fixed URL from our list, never one from the page).
+  4. A hint explains the next step and has a "Copy instruction" button. If the picture can't be copied, it explains the right-click > Copy image way.
+- Toonify AI server calls now also require `aiTool === 'toonify'`.
+- Style instructions live in `src/core/ai-tools.ts`; a unit test keeps them identical to `server/lib/styles.ts`.
+- Tests: unit (catalogue, fallbacks, prompt sync, app opener and image fetcher rules), e2e (pick Gemini in the popup, clipboard has PNG + text, Gemini tab requested, hint; ChatGPT with an uncopyable image, Copy instruction, Done). Real Gemini/ChatGPT pasting must be checked by the owner (needs his accounts).
+
+## AI paused, Effects added (18 Nov 2026)
+
+Owner tried the account handoff and wants live conversion only. **AI cartoonize is hidden** (`isAiFeatureEnabled()` is true only in e2e builds); its code and tests stay.
+
+New **Effects**: per-site switches in the popup, default off (owner: "let users customize"). All live, on the device, reversible, no new permissions.
+
+| Effect           | How                                                                                                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hand-drawn lines | Rough double-stroke SVG drawn as the background of marked buttons and fields (replaces the ring, keeps the lift). Fixed-seed SVG turbulence wobble on photos. Wavy underline on links inside body text.      |
+| Sticker photos   | White border + soft shadow (box-shadow), tilt ±1.2° (`transform`), straightens on hover                                                                                                                      |
+| Bouncy buttons   | Spring `transform` on hover and press, only when the user has not asked for reduced motion                                                                                                                   |
+| Playful headings | Fredoka (OFL, bundled in `public/fonts/` with its licence), Latin and Latin-ext ranges only. The classifier marks h1-h4 as `heading` only if their letters are ≥80% Latin, so other scripts keep their font. |
+| Comic background | One fixed, click-through `html::after` overlay: grid (Classic), halftone (Comic Book), paper grain (Storybook). Multiply on light pages, screen on dark ones.                                                |
+
+- Light/dark page detection (`page-scheme.ts`): `html[data-toonify-scheme]`, so ink is dark on light pages and light on dark ones.
+- Manifest: `web_accessible_resources` for `fonts/*.woff2` (no permission warning).
+- Tests: effects CSS safety per style, per-site settings, Latin detection (Bengali, Arabic, Japanese), scheme detection. E2E: each switch on/off from the popup, remembered after reload, everything removed when the site is turned off, strict-CSP page (font and lines still work), dark page gets light ink.
+- One e2e run had a single unexplained failure on a cold start; 3 later full runs were clean. Watch it.
+
 ## Next steps
 
 3. Real-site pass (news, shopping, video, docs, social) and tuning.
