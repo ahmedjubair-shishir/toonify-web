@@ -1,62 +1,76 @@
+import type { CartoonFilter } from '@/core/themes';
+import { clearMarks } from './classify';
+import {
+  CARTOON_FILTER_ID,
+  FILTER_ELEMENT_ID,
+  createFilterElement,
+  filterKey,
+} from './image-filter';
+
 /**
  * The Toonify "layer": everything we add to a web page lives behind ONE
- * attribute on <html> and ONE <style> element, so turning Toonify off is
- * always a clean, complete removal.
- *
- * Milestone 0 uses a deliberately small, visible treatment to prove the
- * add/remove cycle. The real theme engine replaces TOONIFY_CSS in Milestone 2.
+ * attribute on <html>, ONE <style> element, ONE hidden <svg> with the image
+ * filter (when the style redraws images) and the classifier's per-element
+ * marks, so turning Toonify off is always a clean, complete removal.
+ * The CSS itself comes from the theme engine (theme-css.ts).
  */
 
 export const ACTIVE_ATTRIBUTE = 'data-toonify-active';
 export const STYLE_ELEMENT_ID = 'toonify-web-style';
 
-const INK = '#1b1b2f';
+/** What a theme puts on the page. */
+export interface LayerContent {
+  css: string;
+  filter: CartoonFilter | null;
+}
 
-// Every rule is scoped under html[data-toonify-active], so nothing applies
-// unless Toonify is on. No !important, no layout properties (display,
-// position, width, height, z-index, overflow) are touched.
-export const TOONIFY_CSS = `
-html[${ACTIVE_ATTRIBUTE}] img,
-html[${ACTIVE_ATTRIBUTE}] video,
-html[${ACTIVE_ATTRIBUTE}] button,
-html[${ACTIVE_ATTRIBUTE}] input,
-html[${ACTIVE_ATTRIBUTE}] select,
-html[${ACTIVE_ATTRIBUTE}] textarea {
-  border-radius: 10px;
-}
-html[${ACTIVE_ATTRIBUTE}] img {
-  outline: 3px solid ${INK};
-  outline-offset: -3px;
-}
-html[${ACTIVE_ATTRIBUTE}] button {
-  box-shadow: 0 3px 0 ${INK};
-}
-`;
+const needsFilter = (css: string | null) => (css ?? '').includes(`#${CARTOON_FILTER_ID}`);
 
-export function isLayerApplied(doc: Document = document): boolean {
+export function isLayerApplied(doc: Document): boolean {
+  const style = doc.getElementById(STYLE_ELEMENT_ID);
   return (
     doc.documentElement.hasAttribute(ACTIVE_ATTRIBUTE) &&
-    doc.getElementById(STYLE_ELEMENT_ID) !== null
+    style !== null &&
+    (!needsFilter(style.textContent) || doc.getElementById(FILTER_ELEMENT_ID) !== null)
   );
 }
 
-/** Adds the layer. Safe to call repeatedly: never creates a second <style>. */
-export function applyLayer(doc: Document = document): void {
+/**
+ * Adds the layer with the given theme CSS. Safe to call repeatedly: never
+ * creates a second <style>, and swaps the CSS in place when the theme changes.
+ */
+export function applyLayer(doc: Document, { css, filter }: LayerContent): void {
   doc.documentElement.setAttribute(ACTIVE_ATTRIBUTE, '');
 
-  if (doc.getElementById(STYLE_ELEMENT_ID) === null) {
+  // Image filter first, so the CSS never points at a missing filter.
+  const svg = doc.getElementById(FILTER_ELEMENT_ID);
+  if (filter === null) {
+    svg?.remove();
+  } else if (svg?.getAttribute('data-key') !== filterKey(filter)) {
+    svg?.remove();
+    // Child of <html>, not <body>: apps that replace <body> keep it.
+    doc.documentElement.append(createFilterElement(doc, filter));
+  }
+
+  const existing = doc.getElementById(STYLE_ELEMENT_ID);
+  if (existing === null) {
     const style = doc.createElement('style');
     style.id = STYLE_ELEMENT_ID;
-    style.textContent = TOONIFY_CSS;
+    style.textContent = css;
     // At document_start <head> may not exist yet; <html> always does.
     (doc.head ?? doc.documentElement).append(style);
+  } else if (existing.textContent !== css) {
+    existing.textContent = css;
   }
 }
 
 /** Removes every trace of the layer. Safe to call when nothing is applied. */
-export function removeLayer(doc: Document = document): void {
+export function removeLayer(doc: Document): void {
   doc.documentElement.removeAttribute(ACTIVE_ATTRIBUTE);
-  doc.querySelectorAll(`#${STYLE_ELEMENT_ID}`).forEach((node) => node.remove());
+  doc
+    .querySelectorAll(`#${STYLE_ELEMENT_ID}, #${FILTER_ELEMENT_ID}`)
+    .forEach((node) => node.remove());
+  clearMarks(doc);
 }
 
 export interface LayerGuard {
@@ -73,7 +87,11 @@ export interface LayerGuard {
  * <head>, never the whole page, so it stays cheap on busy sites. Our own
  * changes trigger it too, but isLayerApplied() is then true, so it cannot loop.
  */
-export function createLayerGuard(doc: Document, isEnabled: () => boolean): LayerGuard {
+export function createLayerGuard(
+  doc: Document,
+  isEnabled: () => boolean,
+  getContent: () => LayerContent,
+): LayerGuard {
   let observer: MutationObserver | null = null;
   let repairScheduled = false;
 
@@ -90,7 +108,7 @@ export function createLayerGuard(doc: Document, isEnabled: () => boolean): Layer
   const repair = () => {
     repairScheduled = false;
     if (!isEnabled() || isLayerApplied(doc)) return;
-    applyLayer(doc);
+    applyLayer(doc, getContent());
     // <head> may have been replaced, so re-attach to the current one.
     observer?.disconnect();
     observeTargets();

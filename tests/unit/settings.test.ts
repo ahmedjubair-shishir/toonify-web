@@ -8,6 +8,7 @@ import {
   parseSettings,
   setGlobalEnabled,
   setSiteEnabled,
+  setSiteTheme,
   watchSettings,
   withoutSites,
 } from '@/core/settings';
@@ -36,6 +37,21 @@ describe('parseSettings (untrusted stored data)', () => {
       unknownField: 'ignored',
     });
     expect(parsed).toEqual({ globalEnabled: false, sites: { 'wikipedia.org': { enabled: true } } });
+  });
+
+  it('keeps a valid style choice and drops invalid ones', () => {
+    const parsed = parseSettings({
+      sites: {
+        'a.com': { enabled: true, theme: 'comic-book' },
+        'b.com': { enabled: true, theme: '<script>' },
+        'c.com': { enabled: false, theme: 42 },
+      },
+    });
+    expect(parsed.sites).toEqual({
+      'a.com': { enabled: true, theme: 'comic-book' },
+      'b.com': { enabled: true },
+      'c.com': { enabled: false },
+    });
   });
 
   it('returns a fresh object, never the shared default', () => {
@@ -87,6 +103,18 @@ describe('settings storage', () => {
     await setSiteEnabled(youtube, true);
     await forgetSite(wiki);
     expect((await getSettings()).sites).toEqual({ [youtube]: { enabled: true } });
+  });
+
+  it('remembers a style per site, and on/off keeps the style', async () => {
+    await setSiteTheme(wiki, 'storybook');
+    expect((await getSettings()).sites[wiki]).toEqual({ enabled: false, theme: 'storybook' });
+    await setSiteEnabled(wiki, true);
+    await setSiteEnabled(wiki, false);
+    await setSiteEnabled(wiki, true);
+    await setSiteTheme(youtube, 'comic-book');
+    const { sites } = await getSettings();
+    expect(sites[wiki]).toEqual({ enabled: true, theme: 'storybook' });
+    expect(sites[youtube]?.theme).toBe('comic-book');
   });
 
   it('notifies watchers with validated settings', async () => {

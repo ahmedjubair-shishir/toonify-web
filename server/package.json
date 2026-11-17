@@ -1,0 +1,10 @@
+{
+  "name": "toonify-web-server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Cartoonize endpoint for Toonify Web. Holds the Gemini API key; the extension never sees it.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  }
+}

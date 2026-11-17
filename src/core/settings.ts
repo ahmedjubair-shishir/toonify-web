@@ -8,7 +8,12 @@ import type { SiteKey } from './site';
 export interface SiteSettings {
   /** The user allowed this site and wants Toonify on it. */
   enabled: boolean;
+  /** Chosen style for this site (a theme id). Missing = the default style. */
+  theme?: string;
 }
+
+/** Theme ids are short kebab-case names; anything else is ignored. */
+const THEME_ID = /^[a-z0-9-]{1,64}$/;
 
 export interface Settings {
   /** Master switch in the popup header ("On" / "Paused"). */
@@ -44,7 +49,10 @@ export function parseSettings(raw: unknown): Settings {
         isRecord(value) &&
         typeof value.enabled === 'boolean'
       ) {
-        sites[key] = { enabled: value.enabled };
+        sites[key] =
+          typeof value.theme === 'string' && THEME_ID.test(value.theme)
+            ? { enabled: value.enabled, theme: value.theme }
+            : { enabled: value.enabled };
       }
     }
   }
@@ -84,9 +92,16 @@ export const setGlobalEnabled = (enabled: boolean) =>
     s.globalEnabled = enabled;
   });
 
+/** Turns a site on or off, keeping its chosen style. */
 export const setSiteEnabled = (site: SiteKey, enabled: boolean) =>
   updateSettings((s) => {
-    s.sites[site] = { enabled };
+    s.sites[site] = { ...s.sites[site], enabled };
+  });
+
+/** Picks the style for a site. Does not turn the site on or off. */
+export const setSiteTheme = (site: SiteKey, theme: string) =>
+  updateSettings((s) => {
+    s.sites[site] = { enabled: s.sites[site]?.enabled ?? false, theme };
   });
 
 /** Returns a copy of `sites` without the given keys. */

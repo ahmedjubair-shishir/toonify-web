@@ -1,7 +1,16 @@
 import { defineContentScript } from '#imports';
-import { applyLayer, createLayerGuard, isLayerApplied, removeLayer } from '@/content/toonify-layer';
+import { createClassifier } from '@/content/classify';
+import { buildThemeCss } from '@/content/theme-css';
+import {
+  applyLayer,
+  createLayerGuard,
+  isLayerApplied,
+  removeLayer,
+  type LayerContent,
+} from '@/content/toonify-layer';
+import { getTheme } from '@/core/themes';
 import { onMessages } from '@/core/messaging';
-import { getSettings, isSiteActive, watchSettings } from '@/core/settings';
+import { getSettings, isSiteActive, watchSettings, type Settings } from '@/core/settings';
 import { siteKeyFromUrl } from '@/core/site';
 
 declare global {
@@ -25,14 +34,27 @@ export default defineContentScript({
     const site = siteKeyFromUrl(location.href);
     if (site === null) return;
 
-    let active = isSiteActive(await getSettings(), site);
-    const guard = createLayerGuard(document, () => active);
+    const contentFor = (settings: Settings): LayerContent => {
+      const theme = getTheme(settings.sites[site]?.theme);
+      return { css: buildThemeCss(theme), filter: theme.cartoon };
+    };
+    const initial = await getSettings();
+    let active = isSiteActive(initial, site);
+    let content = contentFor(initial);
+    const guard = createLayerGuard(
+      document,
+      () => active,
+      () => content,
+    );
+    const classifier = createClassifier(document);
 
     const sync = () => {
       if (active) {
-        applyLayer(document);
+        applyLayer(document, content);
         guard.start();
+        classifier.start();
       } else {
+        classifier.stop();
         guard.stop();
         removeLayer(document);
       }
@@ -41,10 +63,13 @@ export default defineContentScript({
 
     // Popup switches (global or this site) update every tab on this site.
     // Other sites' settings changing does not affect this page.
+    // A new style for this site swaps the CSS in place (no flicker, no reload).
     const unwatch = watchSettings((settings) => {
       const next = isSiteActive(settings, site);
-      if (next === active) return;
+      const nextContent = contentFor(settings);
+      if (next === active && nextContent.css === content.css) return;
       active = next;
+      content = nextContent;
       sync();
     });
 
@@ -55,6 +80,7 @@ export default defineContentScript({
     ctx.onInvalidated(() => {
       unwatch();
       stopMessages();
+      classifier.stop();
       guard.stop();
       removeLayer(document);
       window.__toonifyContentLoaded = false;

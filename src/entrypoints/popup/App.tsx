@@ -1,5 +1,6 @@
 import { Check, Lock, Pause, Power, RotateCcw, RotateCw, TriangleAlert, Ban } from 'lucide-react';
 import { useState } from 'react';
+import { THEMES, getTheme } from '@/core/themes';
 import { Lockup } from './components/BrandMark';
 import { Button } from './components/Button';
 import { ConfirmDialog } from './components/ConfirmDialog';
@@ -7,6 +8,7 @@ import { EmptyState } from './components/EmptyState';
 import { PowerButton } from './components/PowerButton';
 import { SiteRow } from './components/SiteRow';
 import { SiteToggle } from './components/SiteToggle';
+import { ThemePicker } from './components/ThemePicker';
 import { Toast } from './components/Toast';
 import { usePopupState } from './usePopupState';
 
@@ -112,6 +114,11 @@ export function App() {
           <>
             <SiteRow label={site} faviconUrl={tab?.favIconUrl} tone="active" />
             <SiteToggle site={site} checked onChange={actions.setSiteEnabled} />
+            <ThemePicker
+              themes={THEMES}
+              value={getTheme(settings.sites[site]?.theme).id}
+              onChange={actions.setSiteTheme}
+            />
             {view.applied === false && (
               <div className="alert alert--warning" role="note">
                 <TriangleAlert

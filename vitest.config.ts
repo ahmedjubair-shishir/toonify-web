@@ -6,7 +6,7 @@ export default defineConfig({
   // plus an in-memory fake browser API (no real browser needed).
   plugins: [WxtVitest()],
   test: {
-    include: ['tests/unit/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.ts', 'tests/server/**/*.test.ts'],
     environment: 'happy-dom',
   },
 });

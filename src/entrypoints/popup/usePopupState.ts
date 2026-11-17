@@ -10,6 +10,7 @@ import {
   isSiteActive,
   setGlobalEnabled,
   setSiteEnabled,
+  setSiteTheme,
   watchSettings,
   type Settings,
 } from '@/core/settings';
@@ -122,6 +123,9 @@ export function usePopupState() {
     setGlobalEnabled: (enabled: boolean) => void setGlobalEnabled(enabled),
     setSiteEnabled: (enabled: boolean) => {
       if (site) void setSiteEnabled(site, enabled);
+    },
+    setSiteTheme: (theme: string) => {
+      if (site) void setSiteTheme(site, theme);
     },
     /** Must run directly inside the click handler (Chrome needs a user gesture). */
     allowSite: async () => {

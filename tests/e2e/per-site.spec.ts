@@ -167,7 +167,9 @@ test.describe('Milestone 1: per-site Toonify', () => {
     }
     await expect.poll(() => isStyled(page)).toBe(true);
     await expect.poll(() => styleCount(page)).toBe(1);
-    await expect(page.locator('.late-image')).toHaveCSS('border-radius', '10px');
+    // Content rendered by each route change is classified and styled.
+    await expect(page.locator('.late-image')).toHaveAttribute('data-toonify', 'media');
+    await expect(page.locator('.late-image')).toHaveCSS('border-radius', '16px');
   });
 
   test('popup is keyboard operable', async ({ context, worker, extensionId }) => {
