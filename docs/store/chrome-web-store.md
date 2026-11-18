@@ -14,24 +14,24 @@ Upload: `.output/toonify-web-0.1.0-chrome.zip` (made with `npm run zip`).
 
 > Make the web feel illustrated. A reversible, cartoon-inspired layer for websites.
 
-**Description**:
+**Description** (v2, after the "Yellow Argon" keyword-spam rejection on 19 Nov 2026: no third-party icon set names, no long list of style names):
 
 ```
 Make any website feel illustrated, without breaking it.
 
 Toonify Web adds a playful, cartoon-inspired layer to the websites you choose. Turn it on for a site, pick a look, and the page restyles instantly. Turn it off and everything is exactly as it was.
 
-STYLE
-Pick from 11 styles: Classic Cartoon, Comic Book, Storybook, Watercolor, Pencil Sketch, Pop Art, Oil Painting, Vintage Poster, Cel-Shaded, Monochrome Ink and Renaissance Painting. Every site starts on "Original", its own look, until you choose.
+STYLES
+Choose from 11 illustrated looks, from bold comic and pop art to soft watercolor and pencil sketch. Every site starts on its own original look until you pick one.
 
 EFFECTS
-Switch on extras per site: hand-drawn lines, sticker photos, bouncy buttons, playful headings and a comic background.
+Switch on extras for each site: hand-drawn lines, sticker-style photos, bouncy buttons, playful headings and a comic background.
 
 ICONS
-Redraw a site's icons with Lucide, Phosphor or Tabler, or add a free set such as Material Design, Hugeicons or Font Awesome in one click. Give icons a look: Plain, Cartoon, Sketched or Animated.
+Redraw a site's icons with a matching icon set, or add another free open-source set in one click. Give icons a plain, cartoon, sketched or animated look.
 
-MADE TO BE SAFE TO USE
-- Only on sites you allow, one site at a time.
+SAFE TO USE
+- Works only on sites you allow, one site at a time.
 - Never changes a page's layout or what you can click.
 - Keeps keyboard focus outlines and respects "reduce motion".
 - One click to reset a site.
