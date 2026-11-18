@@ -141,6 +141,16 @@ Popup > **Icons**: pick a free icon **set** (Original, Lucide, Phosphor, Tabler)
 - **Known limits**: a site rule on the icon's own background (e.g. `#id { background: ... }`) beats ours and can hide the swapped icon; meanings outside the 48 stay original.
 - Tests: 247 unit, 22 e2e passing (e2e checks real pixels: old drawing gone, new outline drawn, nothing moved, class change play -> pause, strict policy, reduced motion, popup keyboard).
 
+## Popup tabs (owner feedback, 19 Nov 2026)
+
+The popup body was one long scroll, so Effects and Icons were easy to miss. Style, Effects and Icons are now **tabs** under the Site Toggle.
+
+- Each tab shows what is set without opening it: the style name, "Off" / "2 on" for effects, the icon set (and look).
+- WAI-ARIA tabs: Left/Right/Home/End move and open; only the open tab is in the Tab order; panels are labelled by their tab.
+- The last open tab is remembered between popup openings (popup localStorage; falls back to Style).
+- Section headings stay for screen readers only (the tab already names the panel).
+- Tests: new e2e `tabs.spec.ts`; effects and icons tests open their tab first. 247 unit, 23 e2e passing.
+
 ## Next steps
 
 3. Real-site pass (news, shopping, video, docs, social) and tuning.

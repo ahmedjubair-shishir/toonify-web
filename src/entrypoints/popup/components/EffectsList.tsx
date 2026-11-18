@@ -38,7 +38,7 @@ export function EffectsList({ effects, value, onChange }: EffectsListProps) {
 
   return (
     <section className="effects" aria-labelledby="effects-title">
-      <h2 id="effects-title" className="overline">
+      <h2 id="effects-title" className="visually-hidden">
         Effects
       </h2>
       <ul className="effects__list">

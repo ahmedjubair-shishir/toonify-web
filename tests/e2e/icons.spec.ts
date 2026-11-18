@@ -135,6 +135,7 @@ test.describe('Icons (find, swap, looks)', () => {
     await preset(worker, { enabled: true });
     const { page, tabId } = await openTab(context, worker, 'http://localhost:4173/icons.html');
     const popup = await openPopup(context, extensionId, tabId);
+    await popup.getByRole('tab', { name: /Icons/ }).click();
     const sets = popup.getByRole('group', { name: 'Set' });
     const looks = popup.getByRole('group', { name: 'Look' });
     await expect(sets.getByRole('radio', { name: 'Original' })).toBeChecked();

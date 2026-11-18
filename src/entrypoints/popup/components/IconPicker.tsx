@@ -110,7 +110,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
   const previewSet: DrawnIconSetId = value.set === 'original' ? 'lucide' : value.set;
   return (
     <section className="icon-picker" aria-labelledby="icon-picker-title">
-      <h2 id="icon-picker-title" className="overline">
+      <h2 id="icon-picker-title" className="visually-hidden">
         Icons
       </h2>
       <TileGroup

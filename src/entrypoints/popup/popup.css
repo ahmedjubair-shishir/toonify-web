@@ -854,3 +854,77 @@ p {
     animation: tw-icon-wiggle 0.6s ease-in-out;
   }
 }
+
+/*
+ * Section tabs (owner feedback, 19 Nov 2026): Style, Effects and Icons as tabs
+ * instead of one long scroll. Each tab shows its current choice.
+ */
+.section-tabs {
+  display: grid;
+  gap: var(--tw-space-md);
+}
+
+.section-tabs__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--tw-space-2xs);
+  padding-bottom: var(--tw-space-sm);
+  border-bottom: 1px solid var(--tw-border-subtle);
+}
+
+/* Regular tabs: the open one is filled, the others stay plain. */
+.section-tabs__tab {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: var(--tw-radius-sm);
+  color: var(--tw-text-secondary);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background var(--tw-motion-duration-fast) var(--tw-motion-ease-standard),
+    color var(--tw-motion-duration-fast) var(--tw-motion-ease-standard);
+}
+
+.section-tabs__tab:hover {
+  color: var(--tw-text-primary);
+  background: var(--tw-bg-hover);
+}
+
+.section-tabs__tab[aria-selected='true'] {
+  color: var(--tw-text-on-accent);
+  background: var(--tw-bg-accent);
+}
+
+.section-tabs__tab:focus-visible {
+  outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
+  outline-offset: 2px;
+}
+
+.section-tabs__label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+.section-tabs__summary {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--tw-text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-tabs__tab[aria-selected='true'] .section-tabs__summary {
+  color: var(--tw-text-on-accent);
+  opacity: 0.85;
+}
+
+.section-tabs__panel[hidden] {
+  display: none;
+}

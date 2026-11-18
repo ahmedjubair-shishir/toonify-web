@@ -20,6 +20,7 @@ test.describe('Effects (per site, live, reversible)', () => {
     const popup = await openPopup(context, extensionId, tabId);
     await siteSwitch(popup, 'localhost').click();
     await expect.poll(() => page.locator('#photo').getAttribute('data-toonify')).toBe('media');
+    await popup.getByRole('tab', { name: /Effects/ }).click();
     for (const label of [
       'Hand-drawn lines',
       'Sticker photos',

@@ -1,7 +1,20 @@
-import { Check } from 'lucide-react';
-import { useState, type CSSProperties } from 'react';
-import { mediaFilter } from '@/content/theme-css';
-import type { InkShadow, ThemeTokens } from '@/core/themes';
+import {
+  BookOpen,
+  Brush,
+  Check,
+  Clapperboard,
+  Droplets,
+  Feather,
+  Landmark,
+  MessageSquareQuote,
+  Newspaper,
+  Pencil,
+  Smile,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import { useState } from 'react';
+import type { ThemeTokens } from '@/core/themes';
 
 interface ThemePickerProps {
   themes: readonly ThemeTokens[];
@@ -9,56 +22,27 @@ interface ThemePickerProps {
   onChange: (id: string) => void;
 }
 
-/** Scales a theme's numbers down to the tiny preview (tiles are ~1/3 size). */
-const small = (px: number, max: number) => Math.min(max, Math.round(px * 0.6 * 10) / 10);
-
-const shadowCss = (shadow: InkShadow | null, spread: number, ink: string, soft: string) =>
-  shadow === null
-    ? ''
-    : `, ${small(shadow.x, 4)}px ${small(shadow.y, 4)}px ${small(shadow.blur, 8)}px ${shadow.blur === 0 ? spread : 0}px ${shadow.blur === 0 ? ink : soft}`;
-
-/** Ink colours for the preview, like the page engine but on the popup's text colour. */
-function inkVars(theme: ThemeTokens): CSSProperties {
-  const base = theme.ink ?? 'var(--tw-text-primary)';
-  return {
-    ['--tile-ink' as string]: `color-mix(in srgb, ${base} ${theme.inkStrength}%, transparent)`,
-    ['--tile-ink-soft' as string]: `color-mix(in srgb, ${base} ${Math.round(theme.inkStrength / 2)}%, transparent)`,
-    ['--tile-frame' as string]: theme.frame ?? 'var(--tile-ink)',
-  };
-}
-
-/** Mini photo: the theme's frame, corners, shadow and colour treatment. */
-function photoStyle(theme: ThemeTokens): CSSProperties {
-  const line = small(theme.line.media, 3);
-  return {
-    borderRadius: small(theme.radius.media, 10),
-    outline: `${line}px solid var(--tile-frame)`,
-    outlineOffset: -line,
-    filter: mediaFilter(theme.media),
-    boxShadow:
-      shadowCss(theme.mediaShadow, 0, 'var(--tile-ink)', 'var(--tile-ink-soft)').replace(
-        /^, /,
-        '',
-      ) || 'none',
-  };
-}
-
-/** Mini button: the theme's line, corners and lift. */
-function buttonStyle(theme: ThemeTokens): CSSProperties {
-  const line = Math.max(1, small(theme.line.button, 2));
-  return {
-    borderRadius: small(theme.radius.button, 8),
-    boxShadow: `0 0 0 ${line}px var(--tile-ink)${shadowCss(theme.buttonShadow, line, 'var(--tile-ink)', 'var(--tile-ink-soft)')}`,
-  };
-}
+/** One recognisable icon per style (owner feedback: icons read faster than previews). */
+const THEME_ICONS: Readonly<Record<string, LucideIcon>> = {
+  'classic-cartoon': Smile,
+  'comic-book': MessageSquareQuote,
+  storybook: BookOpen,
+  watercolor: Droplets,
+  'pencil-sketch': Pencil,
+  'pop-art': Zap,
+  'oil-painting': Brush,
+  'vintage-poster': Newspaper,
+  'cel-shaded': Clapperboard,
+  'monochrome-ink': Feather,
+  renaissance: Landmark,
+};
 
 /**
- * Style picker as a tile grid (owner feedback: the list was hard to scan;
- * Figma: Popup 06 preset grid). Each tile previews the style with its own
- * numbers. Native radio buttons underneath, so arrow keys, Space and screen
- * readers work without custom code. A choice shows instantly (saving takes a
- * moment); a newer saved value (e.g. from another window) replaces it. The
- * grid is never re-created, so keyboard focus stays put while arrowing.
+ * Style picker as a tile grid: icon above the name, centred (Figma: Popup 06
+ * preset grid). Native radio buttons underneath, so arrow keys, Space and
+ * screen readers work without custom code. A choice shows instantly (saving
+ * takes a moment); a newer saved value (e.g. from another window) replaces
+ * it. The grid is never re-created, so keyboard focus stays put while arrowing.
  */
 export function ThemePicker({ themes, value, onChange }: ThemePickerProps) {
   const [selected, setSelected] = useState(value);
@@ -71,10 +55,11 @@ export function ThemePicker({ themes, value, onChange }: ThemePickerProps) {
 
   return (
     <fieldset className="tiles">
-      <legend className="overline">Style</legend>
+      <legend className="visually-hidden">Style</legend>
       <div className="tiles__grid">
         {themes.map((theme) => {
           const checked = theme.id === selected;
+          const Icon = THEME_ICONS[theme.id] ?? Smile;
           return (
             <label key={theme.id} className="tile" title={theme.description}>
               <input
@@ -88,14 +73,13 @@ export function ThemePicker({ themes, value, onChange }: ThemePickerProps) {
                   onChange(theme.id);
                 }}
               />
-              <span className="tile__preview" style={inkVars(theme)} aria-hidden="true">
-                <span className="tile__photo" style={photoStyle(theme)} />
-                <span className="tile__button" style={buttonStyle(theme)} />
-                {checked && (
-                  <span className="tile__check">
-                    <Check size={12} strokeWidth={3} />
-                  </span>
-                )}
+              {checked && (
+                <span className="tile__check" aria-hidden="true">
+                  <Check size={10} strokeWidth={3} />
+                </span>
+              )}
+              <span className="tile__icon" aria-hidden="true">
+                <Icon size={20} strokeWidth={1.8} />
               </span>
               <span className="tile__name">{theme.name}</span>
               <span id={`theme-desc-${theme.id}`} className="visually-hidden">

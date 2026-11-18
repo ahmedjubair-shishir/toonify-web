@@ -1,8 +1,8 @@
-import { Check, Lock, Pause, Power, RotateCcw, RotateCw, TriangleAlert, Ban } from 'lucide-react';
+import { Ban, Check, Lock, Pause, Power, RotateCcw, RotateCw, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { availableAiTools, getAiTool, isAiFeatureEnabled } from '@/core/ai-tools';
 import { EFFECTS, resolveEffects } from '@/core/effects';
-import { resolveIcons } from '@/core/icons';
+import { ICON_LOOKS, ICON_SETS, resolveIcons } from '@/core/icons';
 import { THEMES, getTheme } from '@/core/themes';
 import { Lockup } from './components/BrandMark';
 import { Button } from './components/Button';
@@ -14,6 +14,7 @@ import { SiteToggle } from './components/SiteToggle';
 import { AiToolPicker } from './components/AiToolPicker';
 import { EffectsList } from './components/EffectsList';
 import { IconPicker } from './components/IconPicker';
+import { SectionTabs } from './components/SectionTabs';
 import { ThemePicker } from './components/ThemePicker';
 import { Toast } from './components/Toast';
 import { usePopupState } from './usePopupState';
@@ -27,6 +28,21 @@ function pageLabel(url: string | undefined): string {
   } catch {
     return 'This page';
   }
+}
+
+/** "Off", "1 on", "3 on" for the Effects tab. */
+function effectsSummary(effects: Record<string, boolean>): string {
+  const on = Object.values(effects).filter(Boolean).length;
+  return on === 0 ? 'Off' : `${on} on`;
+}
+
+/** "Original", "Lucide", "Original · Cartoon" for the Icons tab. */
+function iconsSummary(set: unknown, look: unknown): string {
+  const choice = resolveIcons(set, look);
+  const setName = ICON_SETS.find((option) => option.id === choice.set)?.name ?? '';
+  if (choice.look === 'plain') return setName;
+  const lookName = ICON_LOOKS.find((option) => option.id === choice.look)?.name ?? '';
+  return `${setName} · ${lookName}`;
 }
 
 export function App() {
@@ -120,19 +136,51 @@ export function App() {
           <>
             <SiteRow label={site} faviconUrl={tab?.favIconUrl} tone="active" />
             <SiteToggle site={site} checked onChange={actions.setSiteEnabled} />
-            <ThemePicker
-              themes={THEMES}
-              value={getTheme(settings.sites[site]?.theme).id}
-              onChange={actions.setSiteTheme}
-            />
-            <EffectsList
-              effects={EFFECTS}
-              value={resolveEffects(settings.sites[site]?.effects)}
-              onChange={actions.setSiteEffect}
-            />
-            <IconPicker
-              value={resolveIcons(settings.sites[site]?.iconSet, settings.sites[site]?.iconLook)}
-              onChange={actions.setSiteIcons}
+            <SectionTabs
+              storageKey="toonify-popup-tab"
+              tabs={[
+                {
+                  id: 'style',
+                  label: 'Style',
+                  summary: getTheme(settings.sites[site]?.theme).name,
+                  panel: (
+                    <ThemePicker
+                      themes={THEMES}
+                      value={getTheme(settings.sites[site]?.theme).id}
+                      onChange={actions.setSiteTheme}
+                    />
+                  ),
+                },
+                {
+                  id: 'effects',
+                  label: 'Effects',
+                  summary: effectsSummary(resolveEffects(settings.sites[site]?.effects)),
+                  panel: (
+                    <EffectsList
+                      effects={EFFECTS}
+                      value={resolveEffects(settings.sites[site]?.effects)}
+                      onChange={actions.setSiteEffect}
+                    />
+                  ),
+                },
+                {
+                  id: 'icons',
+                  label: 'Icons',
+                  summary: iconsSummary(
+                    settings.sites[site]?.iconSet,
+                    settings.sites[site]?.iconLook,
+                  ),
+                  panel: (
+                    <IconPicker
+                      value={resolveIcons(
+                        settings.sites[site]?.iconSet,
+                        settings.sites[site]?.iconLook,
+                      )}
+                      onChange={actions.setSiteIcons}
+                    />
+                  ),
+                },
+              ]}
             />
             {isAiFeatureEnabled() && (
               <AiToolPicker
