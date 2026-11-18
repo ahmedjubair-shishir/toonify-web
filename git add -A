@@ -1,0 +1,53 @@
+[33mcommit 1ea0a9f42430d063b6ce3b3fad21577315b3bcad[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Ahmed Jubair <ahmedjubair.shishir@gmail.com>
+Date:   Thu Nov 19 03:57:16 2026 +0600
+
+    Icon set messages as auto-hiding toast
+
+[33mcommit 45a907637b2af6cc7087fc859c660f52a692e209[m
+Author: Ahmed Jubair <ahmedjubair.shishir@gmail.com>
+Date:   Thu Nov 19 02:52:25 2026 +0600
+
+    Popup: regular tabs for Style, Effects and Icons
+
+[33mcommit e1bdb7d71b7fe5b7a465c5ba68ca69aa29592237[m
+Author: Ahmed Jubair <ahmedjubair.shishir@gmail.com>
+Date:   Wed Nov 18 05:27:15 2026 +0600
+
+    Icon swap, style tiles, gitignore env files
+
+[33mcommit aab0ae584a327e0ec54c25bd46361a9b30bb7044[m
+Author: Ahmed Jubair <ahmedjubair.shishir@gmail.com>
+Date:   Wed Nov 18 02:23:50 2026 +0600
+
+    Icon swap: Lucide, Phosphor, Tabler sets with cartoon, sketched and animated looks
+
+[33mcommit b089a85c0aece3cb0a4932bc3ceb81186edeb8d9[m
+Author: Ahmed Jubair <ahmedjubair.shishir@gmail.com>
+Date:   Wed Nov 18 01:19:57 2026 +0600
+
+    Effects: hand-drawn lines, sticker photos, bouncy buttons, playful headings, comic background; AI hidden
+
+[33mcommit 0271d6db5af97eb5dad325e962cd6d00353cd61f[m
+Author: Ahmed Jubair <ahmedjubair.shishir@gmail.com>
+Date:   Wed Nov 18 00:10:41 2026 +0600
+
+    Cartoonize: chip, consent, image swap (tested with fake server)
+
+[33mcommit 721766e0d0449756fd2e50b11d22d3ddf7925b3d[m
+Author: Ahmed Jubair <ahmedjubair.shishir@gmail.com>
+Date:   Tue Nov 17 23:46:34 2026 +0600
+
+    Milestone 2 (part): theme engine, three styles, picker, Gemini cartoonize server
+
+[33mcommit 6302558826d4c35571eb38cbf5396c5aeb0d2f01[m
+Author: Ahmed Jubair <ahmedjubair.shishir@gmail.com>
+Date:   Tue Nov 17 22:27:36 2026 +0600
+
+    Milestone 1: per-site access, popup, settings and messaging
+
+[33mcommit e78d7a95ef7917c399b274df76c3d63c397ad83d[m
+Author: Ahmed Jubair <ahmedjubair.shishir@gmail.com>
+Date:   Tue Nov 17 19:02:18 2026 +0600
+
+    chore: milestone 0 extension spike

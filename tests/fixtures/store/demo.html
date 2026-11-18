@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Weekend Kitchen</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          16px/1.55 Georgia,
+          'Times New Roman',
+          serif;
+        color: #1f2328;
+        background: #fbfaf7;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 32px;
+        border-bottom: 1px solid #e7e2d8;
+        background: #fff;
+      }
+      .brand {
+        font:
+          700 22px/1 system-ui,
+          sans-serif;
+        letter-spacing: -0.02em;
+        margin-right: auto;
+      }
+      .brand span {
+        color: #c2410c;
+      }
+      nav a {
+        margin-right: 18px;
+        color: #1f2328;
+        font:
+          500 15px system-ui,
+          sans-serif;
+        text-decoration: none;
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border: 1px solid #d6d0c4;
+        border-radius: 8px;
+        background: #fff;
+      }
+      .search input {
+        border: 0;
+        outline: 0;
+        font:
+          14px system-ui,
+          sans-serif;
+        width: 140px;
+      }
+      .icon {
+        width: 20px;
+        height: 20px;
+        color: #4b4f56;
+      }
+      .icon-btn {
+        display: inline-grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: #4b4f56;
+      }
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 26px 32px 40px;
+      }
+      .eyebrow {
+        font:
+          600 13px system-ui,
+          sans-serif;
+        color: #c2410c;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 40px;
+        line-height: 1.1;
+        margin: 6px 0 10px;
+      }
+      .meta {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font:
+          14px system-ui,
+          sans-serif;
+        color: #59606a;
+      }
+      .meta svg {
+        width: 16px;
+        height: 16px;
+        vertical-align: -3px;
+        margin-right: 4px;
+      }
+      .hero {
+        display: block;
+        width: 100%;
+        height: auto;
+        margin: 18px 0 12px;
+        border-radius: 10px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin: 6px 0 22px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border: 1px solid #d6d0c4;
+        border-radius: 8px;
+        background: #fff;
+        color: #1f2328;
+        font:
+          600 14px system-ui,
+          sans-serif;
+      }
+      .btn.primary {
+        background: #c2410c;
+        border-color: #c2410c;
+        color: #fff;
+      }
+      .btn svg {
+        width: 18px;
+        height: 18px;
+      }
+      h2 {
+        font-size: 26px;
+        margin: 8px 0 12px;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e7e2d8;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .card img {
+        display: block;
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+      }
+      .card div {
+        padding: 12px 14px 14px;
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 19px;
+      }
+      .card p {
+        margin: 0 0 10px;
+        font-size: 14px;
+        color: #59606a;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <button class="icon-btn" aria-label="Open menu">
+        <svg
+          class="icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <div class="brand">Weekend <span>Kitchen</span></div>
+      <nav><a href="#">Recipes</a><a href="#">Baking</a><a href="#">Quick meals</a></nav>
+      <label class="search">
+        <svg
+          class="icon icon-search"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.5-3.5" />
+        </svg>
+        <input type="search" placeholder="Search recipes" />
+      </label>
+      <button class="icon-btn" aria-label="Notifications">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 8a6 6 0 0112 0c0 7 3 8 3 8H3s3-1 3-8" />
+          <path d="M10 20a2 2 0 004 0" />
+        </svg>
+      </button>
+      <button class="icon-btn" aria-label="Account">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
+        </svg>
+      </button>
+    </header>
+    <main>
+      <div class="eyebrow">Sunday breakfast</div>
+      <h1>Fluffy berry pancakes in 20 minutes</h1>
+      <div class="meta">
+        <span
+          ><svg
+            class="icon-clock"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" /></svg
+          >20 min</span
+        >
+        <span
+          ><svg
+            class="icon-star"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" /></svg
+          >4.8 (312)</span
+        >
+        <span>Serves 4</span>
+      </div>
+      <img
+        class="hero"
+        src="/store/food-1.svg"
+        width="796"
+        height="300"
+        alt="A stack of pancakes with berries"
+        style="height: 300px; object-fit: cover"
+      />
+      <div class="actions">
+        <button class="btn primary">
+          <svg
+            class="icon-heart"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M12 20s-7-4.4-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.6-9 9-9 9z" /></svg
+          >Save recipe
+        </button>
+        <button class="btn">
+          <svg
+            class="icon-share"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <circle cx="6" cy="12" r="2.5" />
+            <circle cx="18" cy="6" r="2.5" />
+            <circle cx="18" cy="18" r="2.5" />
+            <path d="M8.2 11l7.6-4M8.2 13l7.6 4" /></svg
+          >Share
+        </button>
+        <button class="btn">
+          <svg
+            class="icon-cart"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M3 4h2l2.4 11h11l2-8H6.3" />
+            <circle cx="9" cy="20" r="1.5" />
+            <circle cx="18" cy="20" r="1.5" /></svg
+          >Shop ingredients
+        </button>
+      </div>
+      <h2>More to cook this weekend</h2>
+      <div class="cards">
+        <div class="card">
+          <img src="/store/food-2.svg" alt="A bright summer salad" />
+          <div>
+            <h3>Crunchy summer salad</h3>
+            <p>Fresh, colourful and ready in ten minutes.</p>
+            <button class="btn">View recipe</button>
+          </div>
+        </div>
+        <div class="card">
+          <img src="/store/food-3.svg" alt="A loaf of rustic bread" />
+          <div>
+            <h3>No-knead rustic loaf</h3>
+            <p>Four ingredients, one bowl, one happy kitchen.</p>
+            <button class="btn">View recipe</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,4 +1,14 @@
-import { Ban, Check, Lock, Pause, Power, RotateCcw, RotateCw, TriangleAlert } from 'lucide-react';
+import {
+  Ban,
+  Check,
+  Lock,
+  MessageSquare,
+  Pause,
+  Power,
+  RotateCcw,
+  RotateCw,
+  TriangleAlert,
+} from 'lucide-react';
 import { useState } from 'react';
 import { availableAiTools, getAiTool, isAiFeatureEnabled } from '@/core/ai-tools';
 import { EFFECTS, resolveEffects } from '@/core/effects';
@@ -18,6 +28,8 @@ import { SectionTabs } from './components/SectionTabs';
 import { ThemePicker } from './components/ThemePicker';
 import { Toast } from './components/Toast';
 import { usePopupState } from './usePopupState';
+import { browser } from '#imports';
+import { feedbackUrl } from '@/core/feedback';
 
 function pageLabel(url: string | undefined): string {
   if (!url) return 'This page';
@@ -224,7 +236,16 @@ export function App() {
             Reset site
           </Button>
         )}
-        <span className="caption">v0.1 preview</span>
+        <a
+          className="footer-link"
+          href={feedbackUrl(browser.runtime.getManifest(), browser.runtime.id)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={`Toonify Web ${browser.runtime.getManifest().version}`}
+        >
+          <MessageSquare size={16} strokeWidth={1.8} aria-hidden="true" />
+          Feedback
+        </a>
       </footer>
 
       <Toast message={toast} onDismiss={() => setToast(null)} />

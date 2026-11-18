@@ -66,6 +66,14 @@ test.describe('Popup section tabs', () => {
     await expect(icons).toBeFocused();
     await expect(style).toHaveAttribute('tabindex', '-1');
 
+    // Feedback: an unpacked (test) install points to GitHub issues, in a new tab.
+    const feedback = popup.getByRole('link', { name: 'Feedback' });
+    await expect(feedback).toHaveAttribute(
+      'href',
+      'https://github.com/ahmedjubair-shishir/toonify-web/issues/new',
+    );
+    await expect(feedback).toHaveAttribute('target', '_blank');
+
     // The last tab is remembered next time the popup opens.
     await popup.close();
     const again = await openPopup(context, extensionId, tabId);

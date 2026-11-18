@@ -1273,3 +1273,27 @@ p {
   color: var(--tw-text-success);
   opacity: 1;
 }
+
+/* Footer "Feedback": opens the store page (ratings, reviews, support) in a tab. */
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 8px 10px;
+  border-radius: var(--tw-radius-sm);
+  color: var(--tw-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  color: var(--tw-text-primary);
+  background: var(--tw-bg-hover);
+}
+
+.footer-link:focus-visible {
+  outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
+  outline-offset: 2px;
+}

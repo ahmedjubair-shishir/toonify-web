@@ -45,10 +45,18 @@ export default defineBackground(() => {
       await syncContentScripts();
       return { injectedTabs: await injectIntoOpenTabs(originsForSite(site)) };
     },
-    // Content script asks to redraw one image (all checks happen inside).
-    'toonify/cartoonize': (message, sender) => cartoonize(message, sender),
-    // Account handoff (Gemini / ChatGPT app): open the app, fetch an image.
-    'toonify/open-ai-app': (message, sender) => openAiApp(message, sender),
-    'toonify/fetch-image': (message, sender) => fetchImage(message, sender),
   });
+
+  // AI Cartoonize is paused: its message handlers (which can contact an AI
+  // service or fetch images) exist only in test builds, not in the store build.
+  // Written out (not isAiFeatureEnabled()) so the build drops this code entirely.
+  if (import.meta.env.MODE === 'e2e') {
+    onMessages({
+      // Content script asks to redraw one image (all checks happen inside).
+      'toonify/cartoonize': (message, sender) => cartoonize(message, sender),
+      // Account handoff (Gemini / ChatGPT app): open the app, fetch an image.
+      'toonify/open-ai-app': (message, sender) => openAiApp(message, sender),
+      'toonify/fetch-image': (message, sender) => fetchImage(message, sender),
+    });
+  }
 });

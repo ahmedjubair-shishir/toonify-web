@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'wxt';
 import { iconPublicFiles } from './src/core/icons';
 
@@ -43,6 +44,11 @@ export default defineConfig({
     // (one per set, look and meaning), so they are never edited by hand.
     'build:publicAssets': (_wxt, files) => {
       files.push(...iconPublicFiles());
+      // Licences of bundled fonts, icons and libraries travel with the package.
+      files.push({
+        relativeDest: 'THIRD_PARTY_NOTICES.md',
+        contents: readFileSync('THIRD_PARTY_NOTICES.md', 'utf8'),
+      });
     },
   },
 });
