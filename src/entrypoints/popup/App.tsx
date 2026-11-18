@@ -2,8 +2,8 @@ import { Ban, Check, Lock, Pause, Power, RotateCcw, RotateCw, TriangleAlert } fr
 import { useState } from 'react';
 import { availableAiTools, getAiTool, isAiFeatureEnabled } from '@/core/ai-tools';
 import { EFFECTS, resolveEffects } from '@/core/effects';
-import { ICON_LOOKS, ICON_SETS, resolveIcons } from '@/core/icons';
-import { THEMES, getTheme } from '@/core/themes';
+import { ICON_LOOKS, ICON_SETS, isCustomSetRef, resolveIcons } from '@/core/icons';
+import { STYLE_OPTIONS, styleId, styleName } from '@/core/themes';
 import { Lockup } from './components/BrandMark';
 import { Button } from './components/Button';
 import { ConfirmDialog } from './components/ConfirmDialog';
@@ -39,7 +39,9 @@ function effectsSummary(effects: Record<string, boolean>): string {
 /** "Original", "Lucide", "Original · Cartoon" for the Icons tab. */
 function iconsSummary(set: unknown, look: unknown): string {
   const choice = resolveIcons(set, look);
-  const setName = ICON_SETS.find((option) => option.id === choice.set)?.name ?? '';
+  const setName = isCustomSetRef(choice.set)
+    ? 'Custom'
+    : (ICON_SETS.find((option) => option.id === choice.set)?.name ?? '');
   if (choice.look === 'plain') return setName;
   const lookName = ICON_LOOKS.find((option) => option.id === choice.look)?.name ?? '';
   return `${setName} · ${lookName}`;
@@ -142,11 +144,11 @@ export function App() {
                 {
                   id: 'style',
                   label: 'Style',
-                  summary: getTheme(settings.sites[site]?.theme).name,
+                  summary: styleName(settings.sites[site]?.theme),
                   panel: (
                     <ThemePicker
-                      themes={THEMES}
-                      value={getTheme(settings.sites[site]?.theme).id}
+                      themes={STYLE_OPTIONS}
+                      value={styleId(settings.sites[site]?.theme)}
                       onChange={actions.setSiteTheme}
                     />
                   ),
@@ -177,6 +179,7 @@ export function App() {
                         settings.sites[site]?.iconLook,
                       )}
                       onChange={actions.setSiteIcons}
+                      onNotify={setToast}
                     />
                   ),
                 },

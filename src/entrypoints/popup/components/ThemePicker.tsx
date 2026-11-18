@@ -2,6 +2,7 @@ import {
   BookOpen,
   Brush,
   Check,
+  CircleOff,
   Clapperboard,
   Droplets,
   Feather,
@@ -14,16 +15,17 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { ThemeTokens } from '@/core/themes';
+import type { StyleOption } from '@/core/themes';
 
 interface ThemePickerProps {
-  themes: readonly ThemeTokens[];
+  themes: readonly StyleOption[];
   value: string;
   onChange: (id: string) => void;
 }
 
 /** One recognisable icon per style (owner feedback: icons read faster than previews). */
 const THEME_ICONS: Readonly<Record<string, LucideIcon>> = {
+  original: CircleOff,
   'classic-cartoon': Smile,
   'comic-book': MessageSquareQuote,
   storybook: BookOpen,

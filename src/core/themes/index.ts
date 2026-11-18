@@ -33,7 +33,48 @@ export const THEMES: readonly ThemeTokens[] = [
 
 export const DEFAULT_THEME_ID = classicCartoon.id;
 
-/** Unknown ids (e.g. a theme removed in an update) fall back to the default. */
+/**
+ * Tokens for a theme id. Unknown ids fall back to Classic Cartoon. Used as
+ * the base for effects, and for the (paused) AI feature, even when a site
+ * keeps its original style.
+ */
 export function getTheme(id: string | undefined): ThemeTokens {
   return THEMES.find((theme) => theme.id === id) ?? classicCartoon;
 }
+
+/**
+ * "Original": the site keeps its own look (no theme). It is every site's
+ * default (owner request, 19 Nov 2026), so turning Toonify on for a site
+ * changes nothing until the user picks a style, effect or icon set.
+ */
+export const ORIGINAL_STYLE_ID = 'original';
+
+export interface StyleOption {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export const ORIGINAL_STYLE: StyleOption = {
+  id: ORIGINAL_STYLE_ID,
+  name: 'Original',
+  description: "The site's own look",
+};
+
+/** Every style choice in the popup: Original first, then the themes. */
+export const STYLE_OPTIONS: readonly StyleOption[] = [
+  ORIGINAL_STYLE,
+  ...THEMES.map(({ id, name, description }) => ({ id, name, description })),
+];
+
+/** Missing, "original" and unknown ids (e.g. a removed theme) all mean Original. */
+export const isOriginalStyle = (id: string | undefined): boolean =>
+  !THEMES.some((theme) => theme.id === id);
+
+/** The chosen style id for a site: a theme id or "original". */
+export const styleId = (id: string | undefined): string =>
+  isOriginalStyle(id) ? ORIGINAL_STYLE_ID : (id as string);
+
+/** The chosen style's display name. */
+export const styleName = (id: string | undefined): string =>
+  isOriginalStyle(id) ? ORIGINAL_STYLE.name : getTheme(id).name;

@@ -26,6 +26,21 @@ createServer(async (req, res) => {
     });
     return res.end(body);
   }
+  // A tiny "icon CDN" for custom icon sets: only search.svg and home.svg exist.
+  // CORS is open, like jsDelivr and unpkg.
+  if (path.startsWith('/cdn/')) {
+    const name = path.slice('/cdn/'.length).replace(/\.svg$/, '');
+    const ring =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+    const known = { search: ring, home: ring };
+    const cors = { 'access-control-allow-origin': '*' };
+    if (!(name in known)) {
+      res.writeHead(404, { 'content-type': 'text/plain', ...cors });
+      return res.end('Not found');
+    }
+    res.writeHead(200, { 'content-type': 'image/svg+xml', ...cors });
+    return res.end(known[name]);
+  }
   // Icons page under the strictest common policy: images only from the site itself
   // (no data: URLs), to prove swapped icons still draw (or fall back cleanly).
   if (path === '/csp-icons.html') {

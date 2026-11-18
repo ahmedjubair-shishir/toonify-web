@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { ACTIVE_ATTRIBUTE } from '@/content/toonify-layer';
 import { buildThemeCss } from '@/content/theme-css';
-import { DEFAULT_THEME_ID, THEMES, getTheme } from '@/core/themes';
+import {
+  DEFAULT_THEME_ID,
+  ORIGINAL_STYLE_ID,
+  STYLE_OPTIONS,
+  THEMES,
+  getTheme,
+  isOriginalStyle,
+  styleId,
+  styleName,
+} from '@/core/themes';
 
 const selectorsOf = (css: string) =>
   css
@@ -73,5 +82,29 @@ describe.each(THEMES.map((theme) => [theme.name, theme] as const))(
 );
 
 it('the three styles really look different', () => {
-  expect(new Set(THEMES.map(buildThemeCss)).size).toBe(THEMES.length);
+  expect(new Set(THEMES.map((theme) => buildThemeCss(theme))).size).toBe(THEMES.length);
+});
+
+describe('Original style (the site keeps its own look)', () => {
+  it("is every site's default, and what removed or unknown ids mean", () => {
+    expect(isOriginalStyle(undefined)).toBe(true);
+    expect(isOriginalStyle('original')).toBe(true);
+    expect(isOriginalStyle('removed-theme')).toBe(true);
+    expect(isOriginalStyle('comic-book')).toBe(false);
+    expect(styleId(undefined)).toBe(ORIGINAL_STYLE_ID);
+    expect(styleId('storybook')).toBe('storybook');
+    expect(styleName(undefined)).toBe('Original');
+    expect(styleName('pop-art')).toBe('Pop Art');
+  });
+
+  it('comes first in the popup, before the 11 themes', () => {
+    expect(STYLE_OPTIONS[0]?.id).toBe(ORIGINAL_STYLE_ID);
+    expect(STYLE_OPTIONS).toHaveLength(THEMES.length + 1);
+  });
+
+  it('only sets ink for effects: no rules for photos, buttons or fields', () => {
+    const css = buildThemeCss(getTheme(undefined), true);
+    expect(css).toContain('--toonify-ink:');
+    expect(css).not.toMatch(/data-toonify="(media|button|field)"/);
+  });
 });

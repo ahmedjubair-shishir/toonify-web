@@ -159,6 +159,7 @@ test.describe('Milestone 1: per-site Toonify', () => {
     const { page, tabId } = await openTab(context, worker, `${SITE_A}/dynamic.html`);
     const popup = await openPopup(context, extensionId, tabId);
     await siteSwitch(popup, 'localhost').click();
+    await popup.getByRole('radio', { name: /Classic Cartoon/ }).check();
     await expect.poll(() => isStyled(page)).toBe(true);
 
     for (let i = 0; i < 5; i++) {

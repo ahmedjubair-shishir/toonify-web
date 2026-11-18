@@ -6,7 +6,8 @@ import { resolveEffects } from '@/core/effects';
 import { createCartoonizeUi, type CartoonizeUi } from '@/content/cartoonize-ui';
 import { clearIconMarks, createClassifier } from '@/content/classify';
 import { buildIconsCss, needsIconSketch } from '@/content/icons-css';
-import { iconsActive, resolveIcons } from '@/core/icons';
+import { customSetIdOf, iconsActive, isCustomSetRef, resolveIcons } from '@/core/icons';
+import { getCustomIconSets, watchCustomIconSets, type CustomIconSet } from '@/core/custom-icons';
 import { getAiTool, stylePrompt } from '@/core/ai-tools';
 import { buildThemeCss } from '@/content/theme-css';
 import {
@@ -16,7 +17,7 @@ import {
   removeLayer,
   type LayerContent,
 } from '@/content/toonify-layer';
-import { getTheme } from '@/core/themes';
+import { getTheme, isOriginalStyle } from '@/core/themes';
 import { onMessages, sendToBackground } from '@/core/messaging';
 import {
   getSettings,
@@ -55,15 +56,17 @@ export default defineContentScript({
     };
     const contentFor = (settings: Settings): LayerContent => {
       const theme = getTheme(settings.sites[site]?.theme);
+      // "Original" keeps the site's look; effects still use theme tokens as a base.
+      const original = isOriginalStyle(settings.sites[site]?.theme);
       const effects = resolveEffects(settings.sites[site]?.effects);
       const icons = iconsFor(settings);
       return {
         css:
-          buildThemeCss(theme) +
+          buildThemeCss(theme, original) +
           buildEffectsCss(theme, effects, fonts) +
-          buildIconsCss(icons, iconUrl),
+          buildIconsCss(icons, iconUrl, customBlocked ? null : customSetFor(icons.set)),
         filters: {
-          cartoon: theme.cartoon,
+          cartoon: original ? null : theme.cartoon,
           sketch: effects.sketch,
           iconSketch: needsIconSketch(icons),
         },
@@ -73,7 +76,16 @@ export default defineContentScript({
     const iconUrl = (path: string) => browser.runtime.getURL(path as PublicPath);
     const iconsFor = (settings: Settings) =>
       resolveIcons(settings.sites[site]?.iconSet, settings.sites[site]?.iconLook);
+    // Custom icon sets (downloaded by the user, kept in storage).
+    let customSets: CustomIconSet[] = await getCustomIconSets();
+    // Set when this page's security policy blocks the custom icons (data: URLs).
+    let customBlocked = false;
+    const customSetFor = (set: string): CustomIconSet | null =>
+      isCustomSetRef(set)
+        ? (customSets.find((custom) => custom.id === customSetIdOf(set)) ?? null)
+        : null;
     const initial = await getSettings();
+    let latest = initial;
     let active = isSiteActive(initial, site);
     let content = contentFor(initial);
     // AI tool and style instruction, kept current for the Cartoonize chip.
@@ -136,6 +148,7 @@ export default defineContentScript({
     // Other sites' settings changing does not affect this page.
     // A new style for this site swaps the CSS in place (no flicker, no reload).
     const unwatch = watchSettings((settings) => {
+      latest = settings;
       const next = isSiteActive(settings, site);
       const nextContent = contentFor(settings);
       const nextTool = getAiTool(settings.aiTool);
@@ -154,12 +167,33 @@ export default defineContentScript({
       sync();
     });
 
+    // Re-apply when the user adds or removes a custom icon set.
+    const refresh = () => {
+      content = contentFor(latest);
+      if (active) applyLayer(document, content);
+    };
+    const unwatchCustom = watchCustomIconSets((sets) => {
+      customSets = sets;
+      refresh();
+    });
+    // A strict site policy can block custom icons (data: images). Their old
+    // drawing is already hidden, so show the site's own icons instead of blanks.
+    const onBlocked = (event: SecurityPolicyViolationEvent) => {
+      if (customBlocked || !event.blockedURI.startsWith('data')) return;
+      if (customSetFor(iconsFor(latest).set) === null) return;
+      customBlocked = true;
+      refresh();
+    };
+    document.addEventListener('securitypolicyviolation', onBlocked);
+
     const stopMessages = onMessages({
       'toonify/get-status': () => ({ site, applied: isLayerApplied(document) }),
     });
 
     ctx.onInvalidated(() => {
       unwatch();
+      unwatchCustom();
+      document.removeEventListener('securitypolicyviolation', onBlocked);
       stopMessages();
       stopCartoonize();
       classifier.stop();

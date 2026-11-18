@@ -1,7 +1,10 @@
+import type { CustomIconSet } from '@/core/custom-icons';
 import {
   ICON_MEANINGS,
   iconFilePath,
   iconsActive,
+  isDrawnSet,
+  svgDataUrl,
   type DrawnIconSetId,
   type IconChoice,
   type IconLookId,
@@ -23,25 +26,47 @@ import { ACTIVE_ATTRIBUTE } from './toonify-layer';
  * - svg:          its shapes are made invisible (visibility stays undone on off)
  * - font icons:   the glyph's text is made transparent
  * - small images: the picture is pushed out of its own box (object-position)
- * Icons whose meaning is unknown ("other") keep their drawing; looks still apply.
+ * Icons whose meaning is unknown ("other"), or that the chosen set lacks, keep
+ * their drawing; looks still apply.
+ *
+ * Built-in sets load as extension files (they work under strict site security
+ * policies). Custom sets travel as data: URLs inside this CSS, so pages never
+ * contact the user's link; a strict policy can block them, and the content
+ * script then falls back to the site's own icons (no blank icons).
  */
 /** Full URL of an icon file (the content script passes browser.runtime.getURL). */
 export type IconUrl = (path: string) => string;
 
-export function buildIconsCss(choice: IconChoice, iconUrl: IconUrl): string {
+export function buildIconsCss(
+  choice: IconChoice,
+  iconUrl: IconUrl,
+  custom: CustomIconSet | null = null,
+): string {
   if (!iconsActive(choice)) return '';
   const root = `html[${ACTIVE_ATTRIBUTE}]`;
   const icon = `[${ICON_MARK}]`;
-  const known = `[${ICON_MARK}]:not([${ICON_MARK}="other"])`;
   const parts: string[] = [];
-  const swapping = choice.set !== 'original';
 
-  if (choice.set !== 'original') {
-    const set = choice.set;
-    // One custom property per meaning; the drawing rules below are shared.
+  // The drawing for each meaning the chosen set has.
+  const urls: Partial<Record<IconMeaning, string>> = {};
+  if (isDrawnSet(choice.set)) {
+    for (const meaning of ICON_MEANINGS)
+      urls[meaning] = fileUrl(iconUrl, choice.set, meaning, choice.look);
+  } else if (custom !== null && choice.set === `custom:${custom.id}`) {
     for (const meaning of ICON_MEANINGS) {
+      const svg = custom.icons[meaning];
+      if (svg) urls[meaning] = svgDataUrl(svg, choice.look);
+    }
+  }
+  const swapped = Object.keys(urls) as IconMeaning[];
+  const swapping = swapped.length > 0;
+  const known = `[${ICON_MARK}]:is(${swapped.map((m) => `[${ICON_MARK}="${m}"]`).join(', ')})`;
+
+  if (swapping) {
+    // One custom property per meaning; the drawing rules below are shared.
+    for (const meaning of swapped) {
       parts.push(
-        `${root} [${ICON_MARK}="${meaning}"] { --toonify-icon: url("${fileUrl(iconUrl, set, meaning, choice.look)}"); }`,
+        `${root} [${ICON_MARK}="${meaning}"] { --toonify-icon: url("${(urls[meaning] ?? '').replace(/["\\\n]/g, '')}"); }`,
       );
     }
     parts.push(`
@@ -64,7 +89,7 @@ ${root} img${known} {
   }
 
   // Looks for icons that keep their own drawing (all icons, or unknown ones).
-  const own = swapping ? `[${ICON_MARK}="other"]` : icon;
+  const own = swapping ? `[${ICON_MARK}]:not(${known})` : icon;
   if (choice.look === 'cartoon') {
     parts.push(`
 ${root} ${own} {

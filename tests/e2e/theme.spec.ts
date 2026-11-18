@@ -37,6 +37,10 @@ test.describe('Milestone 2: Classic Cartoon theme engine', () => {
 
     const popup = await openPopup(context, extensionId, tabId);
     await siteSwitch(popup, 'localhost').click();
+    // A site starts on "Original" (its own look); pick a style.
+    await expect.poll(() => mark(page, 'photo')).toBe('media');
+    expect(await style(page, 'photo', 'outline-style')).toBe('none');
+    await popup.getByRole('radio', { name: /Classic Cartoon/ }).check();
 
     // Content gets marked and styled.
     await expect.poll(() => mark(page, 'photo')).toBe('media');
@@ -53,10 +57,11 @@ test.describe('Milestone 2: Classic Cartoon theme engine', () => {
     expect(await mark(page, 'editor-button')).toBeNull();
     expect(await style(page, 'icon', 'outline-style')).toBe('none');
 
-    // Photos are redrawn by the cartoon filter, including images from other
-    // sites (CDNs); icons keep their exact pixels.
-    expect(await style(page, 'photo', 'filter')).toContain('url("#toonify-web-cartoon")');
-    expect(await page.locator('#toonify-web-filters').count()).toBe(1);
+    // Photos (also from other sites) get the outline and colour treatment;
+    // the filter redraw is switched off for now, so no filter element.
+    // Icons keep their exact pixels.
+    expect(await style(page, 'photo', 'filter')).not.toContain('url(');
+    expect(await page.locator('#toonify-web-filters').count()).toBe(0);
     expect(await mark(page, 'cdn-photo')).toBe('media');
     expect(Buffer.compare(await page.locator('#cdn-photo').screenshot(), cdnBefore)).not.toBe(0);
     expect(Buffer.compare(await page.locator('#icon').screenshot(), iconBefore)).toBe(0);
@@ -95,17 +100,23 @@ test.describe('Milestone 2: Classic Cartoon theme engine', () => {
     const otherPopup = await openPopup(context, extensionId, other.tabId);
     await siteSwitch(otherPopup, '127.0.0.1').click();
 
-    await expect.poll(() => style(page, 'photo', 'border-radius')).toBe('16px');
-    await expect(popup.getByRole('radio', { name: /Classic Cartoon/ })).toBeChecked();
+    // Every site starts on "Original": Toonify is on, the look is unchanged.
+    const originalRadius = await style(other.page, 'photo', 'border-radius');
+    await expect(popup.getByRole('radio', { name: /Original/ })).toBeChecked();
+    await expect(popup.getByRole('tab', { name: /Style/ })).toContainText('Original');
+    await expect.poll(() => page.locator('#photo').getAttribute('data-toonify')).toBe('media');
+    expect(await style(page, 'photo', 'border-radius')).toBe(originalRadius);
 
+    await popup.getByRole('radio', { name: /Classic Cartoon/ }).check();
+    await expect.poll(() => style(page, 'photo', 'border-radius')).toBe('16px');
     await popup.getByRole('radio', { name: /Comic Book/ }).check();
     await expect.poll(() => style(page, 'photo', 'border-radius')).toBe('4px');
     await popup.getByRole('radio', { name: /Storybook/ }).check();
     await expect.poll(() => style(page, 'photo', 'border-radius')).toBe('22px');
     expect(await page.locator('#toonify-web-style').count()).toBe(1);
 
-    // The other site keeps its own style.
-    expect(await style(other.page, 'photo', 'border-radius')).toBe('16px');
+    // The other site keeps its own style (Original).
+    expect(await style(other.page, 'photo', 'border-radius')).toBe(originalRadius);
 
     // Remembered after reload and in the reopened popup.
     await page.reload();
@@ -123,5 +134,10 @@ test.describe('Milestone 2: Classic Cartoon theme engine', () => {
     await reopened.keyboard.press('ArrowUp');
     await expect(reopened.getByRole('radio', { name: /Classic Cartoon/ })).toBeChecked();
     await expect.poll(() => style(page, 'photo', 'border-radius')).toBe('16px');
+    // Back to Original: the site's own look returns.
+    await reopened.keyboard.press('ArrowUp');
+    await expect(reopened.getByRole('radio', { name: /Original/ })).toBeChecked();
+    await expect.poll(() => style(page, 'photo', 'border-radius')).toBe(originalRadius);
+    expect(await style(page, 'photo', 'outline-style')).toBe('none');
   });
 });

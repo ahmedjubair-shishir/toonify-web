@@ -194,7 +194,8 @@ describe('buildIconsCss', () => {
     expect(css).toContain(
       `[${ICON_MARK}="search"] { --toonify-icon: url("chrome-extension://abc/icons/lucide/plain/search.svg"); }`,
     );
-    expect(css).toContain(`:not([${ICON_MARK}="other"])`);
+    expect(css).toContain(`[${ICON_MARK}]:is([${ICON_MARK}="search"], [${ICON_MARK}="menu"]`);
+    expect(css).not.toMatch(/\[data-toonify-icon="other"\] \{ --toonify-icon/);
     expect(css).toMatch(/background: currentColor/);
   });
 
@@ -204,7 +205,7 @@ describe('buildIconsCss', () => {
     );
     expect(needsIconSketch({ set: 'original', look: 'sketch' })).toBe(true);
     expect(buildIconsCss({ set: 'tabler', look: 'cartoon' }, url)).toContain(
-      `[${ICON_MARK}="other"] {\n  filter: drop-shadow`,
+      `[${ICON_MARK}]:not([${ICON_MARK}]:is(`,
     );
   });
 

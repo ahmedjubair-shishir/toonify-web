@@ -37,7 +37,11 @@ export function mediaFilter(media: MediaTreatment): string {
 const mix = (colour: string, percent: number) =>
   `color-mix(in srgb, ${colour} ${Math.round(percent)}%, transparent)`;
 
-export function buildThemeCss(theme: ThemeTokens): string {
+/**
+ * @param inkOnly Only the ink custom properties (style "Original": the site
+ *   keeps its look, but effects such as Hand-drawn lines still need ink).
+ */
+export function buildThemeCss(theme: ThemeTokens, inkOnly = false): string {
   const root = `html[${ACTIVE_ATTRIBUTE}]`;
   const dark = `html[${ACTIVE_ATTRIBUTE}][${SCHEME_ATTRIBUTE}="dark"]`;
   const base = theme.ink ?? 'currentColor';
@@ -53,7 +57,7 @@ export function buildThemeCss(theme: ThemeTokens): string {
   // The redraw (SVG filter) runs first, then the colour treatment.
   const redraw = theme.cartoon === null ? '' : `url(#${CARTOON_FILTER_ID}) `;
 
-  return `
+  const ink = `
 ${root} {
   --toonify-ink: ${mix(base, theme.inkStrength)};
   --toonify-ink-soft: ${mix(base, theme.inkStrength / 2)};
@@ -63,7 +67,9 @@ ${dark} {
   --toonify-ink: ${mix('currentColor', theme.inkStrength)};
   --toonify-ink-soft: ${mix('currentColor', theme.inkStrength / 2)};
 }
-${root} [${MARK}="media"] {
+`;
+  if (inkOnly) return ink;
+  return `${ink}${root} [${MARK}="media"] {
   border-radius: ${radius.media}px;
   outline: ${line.media}px solid var(--toonify-frame);
   outline-offset: -${line.media}px;

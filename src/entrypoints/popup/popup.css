@@ -719,7 +719,6 @@ p {
 .tile:has(input:checked) {
   border-color: var(--tw-border-accent);
   background: var(--tw-bg-accent-subtle);
-  box-shadow: 0 0 0 1px var(--tw-border-accent);
 }
 
 .tile:has(input:focus-visible) {
@@ -742,13 +741,14 @@ p {
   width: 36px;
   height: 36px;
   border-radius: var(--tw-radius-sm);
-  color: var(--tw-icon-accent);
-  background: var(--tw-bg-accent-subtle);
+  color: var(--tw-icon-secondary);
+  background: var(--tw-bg-subtle);
 }
 
+/* Only the chosen tile uses the accent (owner feedback: less purple). */
 .tile:has(input:checked) .tile__icon {
-  color: var(--tw-icon-on-accent);
-  background: var(--tw-bg-accent);
+  color: var(--tw-icon-accent);
+  background: var(--tw-bg-surface);
 }
 
 .tile__check {
@@ -867,41 +867,44 @@ p {
 .section-tabs__list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--tw-space-2xs);
-  padding-bottom: var(--tw-space-sm);
   border-bottom: 1px solid var(--tw-border-subtle);
 }
 
-/* Regular tabs: the open one is filled, the others stay plain. */
+/*
+ * Underlined tabs (owner feedback: less purple). The open tab gets accent
+ * text and a 2px underline; the others are plain text.
+ */
 .section-tabs__tab {
   display: grid;
   justify-items: center;
   min-width: 0;
-  padding: 6px 4px;
+  margin-bottom: -1px;
+  padding: 6px 4px 8px;
   border: 0;
-  border-radius: var(--tw-radius-sm);
+  border-bottom: 2px solid transparent;
   color: var(--tw-text-secondary);
   background: transparent;
   font: inherit;
   cursor: pointer;
   transition:
-    background var(--tw-motion-duration-fast) var(--tw-motion-ease-standard),
-    color var(--tw-motion-duration-fast) var(--tw-motion-ease-standard);
+    color var(--tw-motion-duration-fast) var(--tw-motion-ease-standard),
+    border-color var(--tw-motion-duration-fast) var(--tw-motion-ease-standard);
 }
 
 .section-tabs__tab:hover {
   color: var(--tw-text-primary);
-  background: var(--tw-bg-hover);
+  border-bottom-color: var(--tw-border-default);
 }
 
 .section-tabs__tab[aria-selected='true'] {
-  color: var(--tw-text-on-accent);
-  background: var(--tw-bg-accent);
+  color: var(--tw-text-accent);
+  border-bottom-color: var(--tw-border-accent);
 }
 
 .section-tabs__tab:focus-visible {
   outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
-  outline-offset: 2px;
+  outline-offset: -2px;
+  border-radius: var(--tw-radius-sm);
 }
 
 .section-tabs__label {
@@ -920,11 +923,353 @@ p {
   white-space: nowrap;
 }
 
-.section-tabs__tab[aria-selected='true'] .section-tabs__summary {
-  color: var(--tw-text-on-accent);
-  opacity: 0.85;
-}
-
 .section-tabs__panel[hidden] {
   display: none;
+}
+
+/* Icons > "Add custom" tile and form (owner request, 19 Nov 2026). */
+.tile--add {
+  border-style: dashed;
+  color: var(--tw-text-primary);
+  font: inherit;
+}
+
+.tile--add:focus-visible {
+  outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
+  outline-offset: 2px;
+}
+
+.custom-set-form {
+  display: grid;
+  gap: var(--tw-space-sm);
+  padding: var(--tw-space-md);
+  border: 1px solid var(--tw-border-default);
+  border-radius: var(--tw-radius-md);
+  background: var(--tw-bg-surface);
+}
+
+.custom-set-form__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.custom-set-form__field {
+  display: grid;
+  gap: 4px;
+}
+
+.custom-set-form__label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--tw-text-primary);
+}
+
+.text-input {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--tw-border-default);
+  border-radius: var(--tw-radius-sm);
+  color: var(--tw-text-primary);
+  background: var(--tw-bg-surface);
+  font: inherit;
+  font-size: 13px;
+}
+
+.text-input:focus-visible {
+  outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
+  outline-offset: 1px;
+}
+
+.text-input[aria-invalid='true'] {
+  border-color: var(--tw-text-error);
+}
+
+.custom-set-form__hint,
+.custom-set-form__status {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--tw-text-secondary);
+}
+
+.custom-set-form__hint code {
+  font-size: 11px;
+}
+
+.custom-set-form__status:empty {
+  display: none;
+}
+
+.custom-set-form__status--error {
+  color: var(--tw-text-error);
+}
+
+.custom-set-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--tw-space-sm);
+}
+
+.custom-sets__notice {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--tw-text-success);
+}
+
+.custom-sets__notice:empty {
+  display: none;
+}
+
+.custom-sets__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.custom-sets__row {
+  display: flex;
+  align-items: center;
+  gap: var(--tw-space-sm);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--tw-border-subtle);
+}
+
+.custom-sets__row:last-child {
+  border-bottom: 0;
+}
+
+.custom-sets__text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.custom-sets__name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-sets__meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--tw-text-secondary);
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--tw-radius-sm);
+  color: var(--tw-icon-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  color: var(--tw-text-error);
+  background: var(--tw-bg-error-subtle);
+}
+
+.icon-btn:focus-visible {
+  outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
+  outline-offset: 2px;
+}
+
+/* Add-your-own form: popular set chips, a link field, help. */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border: 1px solid var(--tw-border-default);
+  border-radius: var(--tw-radius-full);
+  color: var(--tw-text-primary);
+  background: var(--tw-bg-surface);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--tw-border-accent);
+  color: var(--tw-text-accent);
+}
+
+.chip:focus-visible {
+  outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
+  outline-offset: 2px;
+}
+
+.chip:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.custom-set-form__link {
+  display: grid;
+  gap: 4px;
+}
+
+.custom-set-form__row {
+  display: flex;
+  gap: var(--tw-space-sm);
+}
+
+.custom-set-form__row .text-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.custom-set-form__row .btn {
+  height: 36px;
+  min-height: 36px;
+  padding-inline: 12px;
+}
+
+.custom-set-form__error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--tw-text-error);
+}
+
+.custom-set-form__error:empty,
+.custom-set-form__status:empty {
+  display: none;
+}
+
+.custom-set-form__help {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--tw-text-secondary);
+}
+
+.custom-set-form__help summary {
+  width: fit-content;
+  color: var(--tw-text-accent);
+  cursor: pointer;
+}
+
+.custom-set-form__help ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+
+.custom-set-form__help li + li {
+  margin-top: 4px;
+}
+
+.custom-set-form__help code {
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.custom-set-form__help p {
+  margin: 0;
+}
+
+/* Set heading row with small actions (owner feedback: no big Add tile). */
+.tiles__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tw-space-sm);
+  margin-bottom: 4px;
+}
+
+.tiles__header .tiles__sublegend {
+  margin: 0;
+}
+
+.tiles__actions {
+  display: flex;
+  gap: 2px;
+}
+
+.text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--tw-radius-sm);
+  color: var(--tw-text-accent);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.text-btn:hover {
+  background: var(--tw-bg-hover);
+}
+
+.text-btn:focus-visible {
+  outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
+  outline-offset: 1px;
+}
+
+/* Tiles with an optional Remove button (edit mode). */
+.tile-wrap {
+  position: relative;
+  display: grid;
+}
+
+.tile__remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--tw-border-default);
+  border-radius: var(--tw-radius-full);
+  color: var(--tw-text-error);
+  background: var(--tw-bg-surface);
+  cursor: pointer;
+}
+
+.tile__remove:hover {
+  background: var(--tw-bg-error-subtle);
+}
+
+.tile__remove:focus-visible {
+  outline: var(--tw-border-width-focus) solid var(--tw-border-focus);
+  outline-offset: 1px;
+}
+
+.custom-set-form__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.icon-btn--plain:hover {
+  color: var(--tw-text-primary);
+  background: var(--tw-bg-hover);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip--added:disabled {
+  color: var(--tw-text-success);
+  opacity: 1;
 }

@@ -151,6 +151,35 @@ The popup body was one long scroll, so Effects and Icons were easy to miss. Styl
 - Section headings stay for screen readers only (the tab already names the panel).
 - Tests: new e2e `tabs.spec.ts`; effects and icons tests open their tab first. 247 unit, 23 e2e passing.
 
+## Original style and custom icon sets (owner request, 19 Nov 2026)
+
+**Original style.** A new first style tile, "Original" = the site keeps its own look. It is every site's default, so turning Toonify on for a site changes nothing until the user picks a style, effect or icon set. Effects and icons still work with Original (ink comes from Classic Cartoon's tokens; no photo, button or field rules). Missing, "original" or removed style ids all mean Original. Behaviour change: sites that never picked a style used to get Classic Cartoon.
+
+**Custom icon sets.** Icons > Set > "Add custom": the user pastes
+
+- an Iconify set name or link (mdi, ph, https://icon-sets.iconify.design/mdi/) - one request to api.iconify.design, or
+- a CDN link with `{name}` where the icon name goes (e.g. jsDelivr / unpkg).
+
+Toonify tries the usual names for each of the 48 meanings (`CANDIDATE_NAMES`, e.g. search / magnifying-glass / magnify) and keeps the first that exists. Icons are downloaded once in the popup, cleaned (only drawing elements; no scripts, links, images, handlers, styles), and saved in `storage.local` (`customIconSets`, max 12 sets, 20 KB per icon). Saved sets appear as tiles for every site; "Your custom sets" lists them with Remove (sites using a removed set go back to their own icons). Meanings a set lacks keep the site's icon.
+
+- Privacy: only the link the user typed is contacted, once, from the popup. Websites never contact it: icons travel inside our CSS as data: URLs.
+- Security: https only (http allowed for localhost, for tests).
+- Strict site policies (`img-src 'self'`) block data: images. The content script listens for `securitypolicyviolation` and switches custom icons off on that page, so the site's own icons come back instead of blanks. Tested 5 of 5 under that policy; a mutation check (fallback disabled) fails the test, so the fallback is what keeps icons visible.
+- Built-in sets are unaffected (extension files, work under strict policies).
+- Tests: 266 unit (parsing, cleaning, Iconify and CDN downloads with mocked fetch, save/remove, CSS only for available meanings), 25 e2e (add from a local fake CDN, pixels, persistence, remove; strict policy).
+
+## Clearer custom sets, calmer colours (owner feedback, 19 Nov 2026)
+
+- The add form now starts with **one-click popular sets** (Material Design, Hugeicons, Font Awesome, Remix, Bootstrap, Heroicons, Iconoir, Carbon, Ionicons, Boxicons, Material Symbols, all from Iconify), then "Or paste a link" with an Add button. Errors show right under the field. "Which links work?" explains the options. The name is filled in automatically.
+- Icon font / CSS links (e.g. `https://use.hugeicons.com/font/icons.css`) hold no SVG drawings. Links from known libraries are matched to the same set on Iconify; unknown ones get a plain explanation.
+- Iconify lookups also try numbered names (`search-01`), as Hugeicons uses.
+- Tabs are underlined: the open tab has accent text and a 2px underline. Tiles are neutral grey until chosen; only the chosen tile uses the accent.
+
+## Set actions and links hidden (owner feedback, 19 Nov 2026)
+
+- "Add new" and "Edit" are small text buttons beside the Set heading (no big Add tile). Edit shows a remove (x) badge on added sets only; built-in sets can't be removed. Popular chips already added show a check and are disabled.
+- Pasting links is **hidden for now**. The owner wanted an icon-font CDN link (e.g. a Hugeicons or Flaticon CSS link) to restyle icons by name. Not possible without changing pages: a font holds letters, not pictures; most site icons are svg or img, which can't show font letters without replacing the page's elements, and the font would load from the CDN on every site (privacy, and many sites block it). The link code (Iconify links, `{name}` SVG folders) stays in `custom-icons.ts` and its unit tests, ready to bring back.
+
 ## Next steps
 
 3. Real-site pass (news, shopping, video, docs, social) and tuning.
